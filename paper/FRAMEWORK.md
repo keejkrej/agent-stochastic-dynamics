@@ -328,3 +328,12 @@ Interface, not implementation in this repo.
 - Expose (\tau_S,\tau_F\) in `runBenchmark` (already has `score`).
 
 The typed kernel in `src/` is the contract these props should satisfy.
+
+---
+
+## §10 Eval (toys diagnose; τ² scores)
+
+The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They are **not** the agent benchmark. Counts that found \(I_{\mathrm{loop}}\) first are in `paper/ANALYSIS.md` and `experiments/live-0731.json`.
+
+The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). This repo does not invent τ² scores; when that eval is run, cite the JSON.
+

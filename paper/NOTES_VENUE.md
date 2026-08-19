@@ -29,3 +29,7 @@ Until that figure is from a real stack (not only the toy kernel), do not submit 
 - Safety: scientist-emitted C as an untrusted intervention.
 
 Live traces in this repo use deepseek/deepseek-v4-flash-0731 only.
+
+## Established eval
+
+τ²-bench (https://github.com/sierra-research/tau2-bench). pass^k = first-passage under k repeats. Do not report toy p_hit as the agent score. Do not invent τ² numbers; run the suite and cite the JSON.

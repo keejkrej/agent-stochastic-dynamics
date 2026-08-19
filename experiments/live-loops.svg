@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="280" viewBox="0 0 640 280">
+  <rect width="640" height="280" fill="white"/>
+  <text x="320" y="18" text-anchor="middle" font-family="Times, serif" font-size="13">0731 diagnostic: attractors of K_C (N=12, both τ)</text>
+
+  <!-- word-reverse box -->
+  <rect x="16" y="36" width="196" height="220" fill="#f7f4ee" stroke="#222"/>
+  <text x="114" y="56" text-anchor="middle" font-family="Times, serif" font-size="12">word-reverse</text>
+  <text x="114" y="72" text-anchor="middle" font-family="Times, serif" font-size="10">p_hit = 0/12 at τ=0 and 0.7</text>
+  <rect x="48" y="92" width="132" height="28" fill="#dce6f5" stroke="#1f4e8c"/>
+  <text x="114" y="110" text-anchor="middle" font-family="Times, serif" font-size="11">reverse_entire</text>
+  <path d="M180 106 C210 106 210 160 114 160 C48 160 48 120 48 106" fill="none" stroke="#1f4e8c" stroke-width="1.6"/>
+  <polygon points="52,112 48,100 62,106" fill="#1f4e8c"/>
+  <text x="114" y="154" text-anchor="middle" font-family="Times, serif" font-size="10">o: lautriv mod</text>
+  <text x="114" y="188" text-anchor="middle" font-family="Times, serif" font-size="10">first already wrong 12/12</text>
+  <text x="114" y="204" text-anchor="middle" font-family="Times, serif" font-size="10">repeat 60/60 · timeout</text>
+  <text x="114" y="228" text-anchor="middle" font-family="Times, serif" font-size="11">Obs → I_loop</text>
+  <text x="114" y="244" text-anchor="middle" font-family="Times, serif" font-size="9">forbid last action / refine</text>
+
+  <!-- calculator box -->
+  <rect x="222" y="36" width="196" height="220" fill="#f7f4ee" stroke="#222"/>
+  <text x="320" y="56" text-anchor="middle" font-family="Times, serif" font-size="12">calculator</text>
+  <text x="320" y="72" text-anchor="middle" font-family="Times, serif" font-size="10">p_hit = 0/12 at τ=0 and 0.7</text>
+  <rect x="254" y="92" width="132" height="28" fill="#f3ddd4" stroke="#b85c38"/>
+  <text x="320" y="110" text-anchor="middle" font-family="Times, serif" font-size="11">add(3,5)</text>
+  <path d="M386 106 C416 106 416 160 320 160 C254 160 254 120 254 106" fill="none" stroke="#b85c38" stroke-width="1.6"/>
+  <polygon points="258,112 254,100 268,106" fill="#b85c38"/>
+  <text x="320" y="154" text-anchor="middle" font-family="Times, serif" font-size="10">o: 8  (M writes 8)</text>
+  <text x="320" y="188" text-anchor="middle" font-family="Times, serif" font-size="10">first RIGHT 12/12</text>
+  <text x="320" y="204" text-anchor="middle" font-family="Times, serif" font-size="10">never mul(8,2) · timeout</text>
+  <text x="320" y="228" text-anchor="middle" font-family="Times, serif" font-size="11">Obs → I_loop</text>
+  <text x="320" y="244" text-anchor="middle" font-family="Times, serif" font-size="9">consume M / critic</text>
+
+  <!-- retrieval box -->
+  <rect x="428" y="36" width="196" height="220" fill="#eef6ee" stroke="#222"/>
+  <text x="526" y="56" text-anchor="middle" font-family="Times, serif" font-size="12">retrieval-QA</text>
+  <text x="526" y="72" text-anchor="middle" font-family="Times, serif" font-size="10">p_hit = 12/12 · τ_S = 1</text>
+  <rect x="460" y="92" width="132" height="28" fill="#d9ead3" stroke="#2d6a4f"/>
+  <text x="526" y="110" text-anchor="middle" font-family="Times, serif" font-size="11">search:iclr / 2013</text>
+  <line x1="526" y1="120" x2="526" y2="168" stroke="#2d6a4f" stroke-width="1.6" marker-end="none"/>
+  <polygon points="522,160 526,172 530,160" fill="#2d6a4f"/>
+  <rect x="478" y="174" width="96" height="24" fill="white" stroke="#2d6a4f"/>
+  <text x="526" y="190" text-anchor="middle" font-family="Times, serif" font-size="11">S  (hit)</text>
+  <text x="526" y="216" text-anchor="middle" font-family="Times, serif" font-size="10">not a weight miss</text>
+  <text x="526" y="236" text-anchor="middle" font-family="Times, serif" font-size="11">Obs → wait</text>
+  <text x="526" y="252" text-anchor="middle" font-family="Times, serif" font-size="9">I_weight not indicated</text>
+</svg>
