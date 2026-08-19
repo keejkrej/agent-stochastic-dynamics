@@ -1,6 +1,6 @@
 # 0731 toys diagnose the dual intervention; τ²-bench is the eval
 
-**Status.** Counts below are read from `experiments/live-0731.json` (generated 2026-08-19 09:25 CEST). No number is invented. The toys are a *diagnostic* of \(K_C\), not a benchmark. The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench); \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats. This repo does not yet report τ² scores.
+**Status.** Counts below are read from `experiments/live-0731.json` (generated 2026-08-19 09:25 CEST). No number is invented. The toys are a *diagnostic* of \(K_C\), not a benchmark. The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench); \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats. A small official retail slice now exists: `experiments/tau2-retail-0731.json` (copied from vdom-harness `eval/tau2/retail-live-metrics.json`).
 
 **Thesis (not watered down).** A vdom agent observes its own traces. From \(\mathrm{Obs}\) it either
 
@@ -223,7 +223,7 @@ They are not τ²-bench. They are not a claim that deepseek-v4-flash-0731 “can
 
 Under independence this is \((p_{\mathrm{hit}})^k\). It is *not* \(\mathrm{pass}@k\) (best of \(k\)). A flaky loop that hits once in \(k\) trials has large \(\mathrm{pass}@k\) and vanishing \(\mathrm{pass}^k\). The eval gate for \(I_{\mathrm{weight}}\) should read \(\mathrm{pass}^k\), not a single lucky rollout — the \(N=2\) fluke is exactly why.
 
-**This repo does not report τ² scores.** No domain table, no \(\mathrm{pass}^1\) / \(\mathrm{pass}^k\) number, no comparison to gpt-4.1 / Claude. When that eval is run, it lands in `experiments/` and the paper cites the JSON. Until then the 0731 toys remain the diagnostic that founds \((\mathrm{Obs},\{I_{\mathrm{loop}},I_{\mathrm{weight}}\})\).
+**Scores now exist (small live retail slice).** Official tau2 compute_metrics for the vdom agent on OpenRouter `deepseek/deepseek-v4-flash-0731`, N=5 tasks x 4 trials, live at https://github.com/keejkrej/vdom-harness/blob/main/eval/tau2/retail-live-metrics.json and copied here as `experiments/tau2-retail-0731.json`: avgReward=1.0, pass^1=pass^2=pass^3=pass^4=1.0. Copied from compute_metrics; not invented. Small slice only; no comparison table. The 0731 toys remain the diagnostic that founds (Obs, {I_loop, I_weight}).
 
 ---
 
