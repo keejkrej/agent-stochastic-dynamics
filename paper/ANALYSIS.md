@@ -63,6 +63,8 @@ Copied from vdom-harness `eval/tau2/retail-live-metrics.json` as `experiments/ta
 
 This is a *static* one-shot score. $\mathrm{Obs}$ should `wait` — a fixed point of the loop, not a demonstration of the loop. The protocol in §0 needs $\mathrm{pass}^k(0)<1$.
 
+The toolkit applied to the full trajectories (actions, tools, repeats, per-trial $\mathrm{Obs}$) is `paper/ANALYSIS_STATIC_TAU2.md`. In that language the run is $\mathbb{P}_{C_0}$: fixed one-shot $C$, fast clock only, $P^{\mathrm{ctrl}}=\mathrm{wait}$ on 20/20, mean (median) $\tau_S=14.8$ ($14.5$) actions, consecutive same tool+args $0/155$, logged critique `path measure hits S; wait`. It does not replace the cycle table above.
+
 ---
 
 ## 1. Diagnostic (0731 toys): what was measured

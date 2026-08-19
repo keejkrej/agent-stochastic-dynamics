@@ -20,6 +20,7 @@ Papers, blogs, GitHub, X, and other agents are **inputs** to that runtime, not t
 - ICLR 2027 draft: `paper/iclr2027/main.tex`
 - Venue track: `paper/NOTES_VENUE.md`
 - Closed-loop protocol (TO RUN $\mathrm{pass}^k(t)$; 0731 licenses $I_{\mathrm{loop}}$ on cycle 0; 5×4 retail $1.0$ is a `wait` ceiling): `paper/ANALYSIS.md`
+- Static $\tau^2$ retail $5\times 4$ as $\mathbb{P}_{C_0}$ (wait fixed point; does not replace the cycle table): `paper/ANALYSIS_STATIC_TAU2.md`
 - Math $\leftrightarrow$ runtime map: `docs/VDOM_INTERFACE.md`
 
 Do not invent $\tau^2$ cycle scores. Toy word-reverse is not the eval. The live retail $5\times 4$ one-shot with $\mathrm{pass}^k=1.0$ is a static score on an easy slice — not the loop.

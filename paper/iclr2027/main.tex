@@ -206,6 +206,13 @@ A live official retail slice already exists: $N=5$ tasks $\times$ $4$ trials, \t
 
 That run is a static one-shot score. $\mathrm{Obs}$ selects $\mathrm{wait}$; the loop is already at a fixed point. It is a ceiling on an easy slice. It does not demonstrate the closed loop. The protocol needs a slice with $\mathrm{pass}^k(0)<1$ so~\eqref{eq:ctrl} has something to iterate.
 
+\subsection{Static retail $5\times 4$ is $\mathbb{P}_{C_0}$ at a wait fixed point}
+\label{sec:static}
+
+Full trajectories: vdom-harness \texttt{eval/tau2/retail-live-20260819T083613Z.json} (same bytes as \texttt{latest.json}; 20 sims; generated 2026-08-19 10:36 CEST). Definitions applied, with real counts, in \texttt{paper/ANALYSIS\_STATIC\_TAU2.md}.
+
+This run is a \emph{fixed} one-shot graph $C_0$ (\texttt{tau2-oneshot}, single \texttt{solve} node). $P^{\mathrm{ctrl}}=\mathrm{wait}$ on all 20 trials. Fast clock only. No $I_{\mathrm{loop}}$, no $I_{\mathrm{weight}}$. The path measure is $\mathbb{P}_{C_0}$, not the closed loop of Definition~\ref{def:loop}. All 20 trials have reward $1.0$ and termination \texttt{user\_stop}, so $\tau_S<\tau_F$, $p_{\mathrm{hit}}=1$, official $\mathrm{pass}^k=1$ for $k\le 4$ (reliability, not $\mathrm{pass}@k$). Mean (median) event-time $\tau_S$ is $14.8$ ($14.5$) actions. Consecutive same-name tools occur as catalog lookups of distinct ids; consecutive same tool+args occur $0/155$. Logged $\mathrm{Obs}$ critique is \texttt{path measure hits S; wait} on $20/20$. That is why a $1.0$ one-shot cannot demonstrate self-improvement: $P^{\mathrm{ctrl}}$ has no license to fire. Tasks $0$--$4$ of $114$. This subsection does not replace the cycle table of \S\ref{sec:torun}.
+
 \subsection{Diagnostic that licenses $I_{\mathrm{loop}}$ first (not the loop)}
 \label{sec:diag}
 
@@ -245,7 +252,7 @@ A vdom agent watches itself and then edits its loop or dispatches a weight updat
 \subsection*{AI use statement}
 Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Cycle cells marked TO RUN are empty on purpose. We take responsibility for the final content.
 \subsection*{Reproducibility statement}
-See paper/FRAMEWORK.md, paper/ANALYSIS.md, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{improveLoop} iterates; \texttt{python -m tau2\_vdom --agent vdom}). $\tau^2$ cycle scores are not reported in this draft.
+See paper/FRAMEWORK.md, paper/ANALYSIS.md, paper/ANALYSIS\_STATIC\_TAU2.md, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{improveLoop} iterates; \texttt{python -m tau2\_vdom --agent vdom}). $\tau^2$ cycle scores are not reported in this draft.
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 \end{document}
