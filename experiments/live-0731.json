@@ -1,0 +1,350 @@
+{
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "keyed": true,
+  "provider": "openrouter",
+  "N": 2,
+  "temperature": 0.7,
+  "traces": [
+    {
+      "taskId": "word-reverse",
+      "seed": 10,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "text",
+            "text": "reverse_each_word"
+          },
+          "observation": {
+            "text": "mod lautriv",
+            "channel": "env"
+          },
+          "logits": {
+            "reverse_entire": 0,
+            "reverse_each_word": 1,
+            "reflect": 0,
+            "write_lesson": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {}
+        }
+      ],
+      "outcome": "success",
+      "tauS": 1,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 1
+    },
+    {
+      "taskId": "word-reverse",
+      "seed": 11,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "text",
+            "text": "reverse_each_word"
+          },
+          "observation": {
+            "text": "mod lautriv",
+            "channel": "env"
+          },
+          "logits": {
+            "reverse_entire": 0,
+            "reverse_each_word": 1,
+            "reflect": 0,
+            "write_lesson": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {}
+        }
+      ],
+      "outcome": "success",
+      "tauS": 1,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 1
+    },
+    {
+      "taskId": "calculator",
+      "seed": 10,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "tool",
+            "text": "tool:add:3,5",
+            "toolName": "add",
+            "toolArgs": "3,5"
+          },
+          "observation": {
+            "text": "8",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:add:3,5": 1,
+            "tool:mul:3,2": 0,
+            "tool:mul:5,2": 0,
+            "tool:mul:8,2": 0,
+            "answer:10": 0,
+            "answer:16": 0,
+            "answer:11": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {
+            "tool:add": "8"
+          }
+        },
+        {
+          "n": 1,
+          "action": {
+            "kind": "tool",
+            "text": "tool:mul:8,2",
+            "toolName": "mul",
+            "toolArgs": "8,2"
+          },
+          "observation": {
+            "text": "16",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:add:3,5": 0,
+            "tool:mul:3,2": 0,
+            "tool:mul:5,2": 0,
+            "tool:mul:8,2": 1,
+            "answer:10": 0,
+            "answer:16": 0,
+            "answer:11": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {
+            "tool:add": "8",
+            "tool:mul": "16"
+          }
+        }
+      ],
+      "outcome": "success",
+      "tauS": 2,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 2
+    },
+    {
+      "taskId": "calculator",
+      "seed": 11,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "tool",
+            "text": "tool:add:3,5",
+            "toolName": "add",
+            "toolArgs": "3,5"
+          },
+          "observation": {
+            "text": "8",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:add:3,5": 1,
+            "tool:mul:3,2": 0,
+            "tool:mul:5,2": 0,
+            "tool:mul:8,2": 0,
+            "answer:10": 0,
+            "answer:16": 0,
+            "answer:11": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {
+            "tool:add": "8"
+          }
+        },
+        {
+          "n": 1,
+          "action": {
+            "kind": "tool",
+            "text": "tool:mul:8,2",
+            "toolName": "mul",
+            "toolArgs": "8,2"
+          },
+          "observation": {
+            "text": "16",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:add:3,5": 0,
+            "tool:mul:3,2": 0,
+            "tool:mul:5,2": 0,
+            "tool:mul:8,2": 1,
+            "answer:10": 0,
+            "answer:16": 0,
+            "answer:11": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {
+            "tool:add": "8",
+            "tool:mul": "16"
+          }
+        }
+      ],
+      "outcome": "success",
+      "tauS": 2,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 2
+    },
+    {
+      "taskId": "retrieval-qa",
+      "seed": 10,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "text",
+            "text": "answer:2013"
+          },
+          "observation": {
+            "text": "2013",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:search:iclr": 0,
+            "tool:search:neurips": 0,
+            "tool:search:icml": 0,
+            "answer:1987": 0,
+            "answer:2013": 1,
+            "answer:2024": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {}
+        }
+      ],
+      "outcome": "success",
+      "tauS": 1,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 1
+    },
+    {
+      "taskId": "retrieval-qa",
+      "seed": 11,
+      "temperature": 0.7,
+      "modelId": "deepseek/deepseek-v4-flash-0731",
+      "provider": "openrouter",
+      "steps": [
+        {
+          "n": 0,
+          "action": {
+            "kind": "text",
+            "text": "answer:2013"
+          },
+          "observation": {
+            "text": "2013",
+            "channel": "env"
+          },
+          "logits": {
+            "tool:search:iclr": 0,
+            "tool:search:neurips": 0,
+            "tool:search:icml": 0,
+            "answer:1987": 0,
+            "answer:2013": 1,
+            "answer:2024": 0,
+            "stop": 0
+          },
+          "gap": 1,
+          "tokenFlipped": false,
+          "channels": [
+            "samp",
+            "env"
+          ],
+          "memoryAfter": {}
+        }
+      ],
+      "outcome": "success",
+      "tauS": 1,
+      "tauF": null,
+      "pHit": 1,
+      "cost": 1
+    }
+  ],
+  "firstPassage": [
+    {
+      "taskId": "word-reverse",
+      "pHit": 1,
+      "nSuccess": 2,
+      "N": 2,
+      "meanTauS": 1
+    },
+    {
+      "taskId": "calculator",
+      "pHit": 1,
+      "nSuccess": 2,
+      "N": 2,
+      "meanTauS": 2
+    },
+    {
+      "taskId": "retrieval-qa",
+      "pHit": 1,
+      "nSuccess": 2,
+      "N": 2,
+      "meanTauS": 1
+    }
+  ]
+}

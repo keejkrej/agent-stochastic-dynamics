@@ -1,0 +1,126 @@
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+\input{math_commands.tex}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\title{Self-Observing LLM Agents: Dual Intervention on the Loop and on the Weights}
+
+\author{Tianyi Cao \\
+Independent \thanks{Affiliation TODO.} \\
+\texttt{keejkrej@users.noreply.github.com}
+}
+
+% \iclrfinalcopy
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A virtual-DOM (vdom) agent can observe itself: it reads its own traces, first-passage times, and failures, and writes a critique of its own path measure into memory. From that observation it has two interventions. It can emit a new AgentGraph, so a deterministic reconciler mutates the composition of the serving kernel; or it can dispatch an asynchronous sub-agent to fine-tune weights. The serving loop keeps running on the old logit map. When the artifact is ready and an eval gate passes, reconcile swaps the model pointer; failed eval is no-switch or rollback. We write this as a hybrid Markov process with two clocks---fast serving, slow adapter jumps---and three typed noise channels (sampling, numerical, environmental). The contribution is the self-observation operator and the dual intervention, not a generation SDE.
+\end{abstract}
+
+\section{The key}
+
+An LLM agent is usually described as a generator with tools bolted on, or as a latent diffusion, or as an MDP over memory operations. Those descriptions miss what a vdom agent actually does.
+
+The agent \emph{reads its own traces}. It sees actions, observations, channel tags, and a first-passage score on a fixture. It writes a critique of that path measure into structured memory. Call this operator $\mathrm{Obs}$. Then a control kernel, given $\mathrm{Obs}(\mathrm{traces})$, chooses one of a small set of interventions:
+
+\begin{enumerate}
+\item \textbf{Loop.} Emit a new AgentGraph $G'$. Reconcile is a deterministic map $(G,G')\mapsto$ mount / update / retain / unmount. The \emph{composition} of the serving kernel $K$ changes: critics, refiners, validators, capabilities. The logit map $f_\theta$ does not.
+\item \textbf{Weights.} Dispatch an asynchronous trainer (a Trainer port, an HF job, a LoRA run) on the same traces. Serving does not stop. When the artifact is ready, an eval gate estimates hit probability on a fixture. Only then may reconcile rebind \texttt{PhysicalNode.provider}. Failed eval: no switch. Later regression: unmount, which is rollback.
+\end{enumerate}
+
+There are two clocks. The fast clock $n$ is the serving loop---sampling noise and environmental noise, $\theta$ frozen. The slow clock is the trainer. A gated mount is a jump $C\mapsto C'$ that changes $f_\theta$. This is not a diffusion in weight space.
+
+Topology is a value \citep{vdomharness}. A scientist that emits a graph is $I_{\mathrm{loop}}$. A trainer that returns an adapter is $I_{\mathrm{weight}}$. Self-observation is what licenses both. Determinism is allocated on the fast clock; learning is gated on the slow clock.
+
+\paragraph{What we are not claiming.}
+We are not claiming that Langevin dynamics applies to the loop, nor that the closed loop is an SDE on a latent manifold. Generation-SDE papers \citep{sde2408,sde2510,lgoc2605} model token generation. Memory-as-MDP papers \citep{slmv3,memcon,memento2,memp} enlarge memory actions. Reflexion and Self-Refine \citep{reflexion,selfrefine} are particular loop mutations without weight updates. The gap is the pair $(\mathrm{Obs},\{I_{\mathrm{loop}},I_{\mathrm{weight}}\})$ on a typed-noise hybrid kernel.
+
+\section{Hybrid state and typed noise}
+
+\textbf{Definition.} At serving step $n$,
+\[
+X_n=(H_n,M_n,E_n,C_n)\in\mathcal{V}^*\times\mathcal{M}\times\mathcal{E}\times\mathcal{C},
+\]
+where $H$ is context, $M$ is structured memory (including $\mathrm{Obs}$ features), $E$ is the environment / tools, and $C$ is the AgentGraph plus decoding knobs and bound model / adapter ids. An optional embedding $z_n=\Pi(X_n)$ is a projection, never the state.
+
+One serving step is a composition, not a diffusion:
+(i) $a_{n+1}\sim P^{\mathrm{gen}}_C(\cdot\mid H_n,M_n)$;
+(ii) $(E_{n+1},o_{n+1})\sim P^{\mathrm{env}}(\cdot\mid E_n,a_{n+1})$;
+(iii) $M_{n+1}\sim P^{\mathrm{mem}}_C(\cdot\mid M_n,H_n,a_{n+1},o_{n+1})$;
+(iv) $H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})$ (Dirac);
+(v) $C_{n+1}\sim P^{\mathrm{ctrl}}(\cdot\mid C_n,\mathrm{Obs}(\mathrm{traces}_n))$.
+Write $X_{n+1}\sim K_C(\cdot\mid X_n)$. Time is discrete and event-driven.
+
+Generation factors as
+\[
+P^{\mathrm{gen}}(a\mid H,M,C)=\int P^{\mathrm{dec}}_C(a\mid \tilde\ell)\,P^{\mathrm{num}}(d\tilde\ell\mid f_\theta(H),C).
+\]
+Three channels, conditionally independent given $X_n$: sampling (designed; vanishes as $\tau\to 0$ with unique argmax), numerical (logit perturbation $\tilde\ell=f_\theta(H)+\varepsilon$, not white in time), environmental (tools, web, clocks; discrete, heavy-tailed). Numerical noise is a boundary layer on near-ties, not a diffusion coefficient (Lemma~\ref{lem:gap}).
+
+\section{Self-observation and two clocks}
+
+\textbf{Observation.} $\mathrm{Obs}$ maps traces and first-passage proxies to features in $M$. It is a statistic, not a noise source. In the companion runtime this is \texttt{traces} plus \texttt{runBenchmark.score} \citep{vdomharness}.
+
+\textbf{Control support.} After $\mathrm{Obs}$, $P^{\mathrm{ctrl}}$ takes values in a finite set: graph mutation, spawn trainer, mount adapter, rollback, capability mount, commit, wait. Reconcile is deterministic. Spawn does not change $f_\theta$. Mount is allowed only if an artifact is ready \emph{and} $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture.
+
+\textbf{Two clocks.} Fast clock $n$: serving under $K_C$. Slow clock: trainer jobs. Artifact arrival is an optional time $T_{\mathrm{adapt}}$. Serving does not block. The fast process is piecewise homogeneous.
+
+\textbf{First passage.} Success set $S$, failure $F$, $\tau_S=\inf\{n:X_n\in S\}$, $\tau_F=\inf\{n:X_n\in F\}$, $p_{\mathrm{hit}}=\mathbb{P}(\tau_S<\tau_F)$. The eval gate is this object.
+
+\textbf{Cascade.} TV Lipschitz of any kernel is $\le 1$. Expansion after a one-bit memory split is visible in Hamming on prefixes. Autoregression plus memory write is typically expanding in that metric until a commit or a validator contracts.
+
+\section{Lemmas}
+
+\begin{lemma}[Greedy collapse]
+If $\tau=0$, the argmax of $f_\theta(H)$ is unique a.s., numerical noise is absent, and env / memory / control are Dirac, then $K_C(\cdot\mid x)=\delta_{\Phi(x)}$. Residual randomness is environmental or a numerical tie.
+\end{lemma}
+
+\begin{lemma}[Gap-sensitivity]\label{lem:gap}
+Let $\Delta\ell=\ell_{(1)}-\ell_{(2)}$ and $\tilde\ell=\ell+\varepsilon$. If $\Delta\ell>2\|\varepsilon\|_\infty$ then $\arg\max\tilde\ell=\arg\max\ell$. Hence $\mathbb{P}(\mathrm{flip})\le\mathbb{P}(\Delta\ell\le 2\|\varepsilon\|_\infty)$.
+\end{lemma}
+
+\begin{lemma}[Serving / trainer separation]
+Spawning a trainer does not mutate $C$. While the job runs, the serving process is Markov under the pre-job kernel. A jump in $f_\theta$ occurs only at a gated mount.
+\end{lemma}
+
+\begin{lemma}[Eval gate]
+Mounts occur iff $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture. This is empirical first-passage, not a new objective.
+\end{lemma}
+
+Proofs of the first two are elementary. The third is by construction of $I_{\mathrm{weight}}$. Further tradeoffs are in \texttt{paper/FRAMEWORK.md}.
+
+\section{Experiments}
+
+No private corpus. Trajectories are generated in-process. Live sampling, when keyed, uses OpenRouter and \texttt{deepseek/deepseek-v4-flash-0731} only.
+
+\subsection{Toy kernel}
+
+A finite-action kernel implements word-reverse, a two-tool calculator, and retrieval-QA. Naive $f_\theta$ has the wrong mode. At $\tau=0$, greedy collapse gives $p_{\mathrm{hit}}=0$ on all three tasks ($N=200$). Raising $\tau$ leaks mass onto corrective actions: word-reverse $p_{\mathrm{hit}}=0.16, 0.735, 0.755$ at $\tau=0.5,1.0,1.5$ ($k=1$). Best-of-$k$ scored by the model's own logit lowers $p_{\mathrm{hit}}$. Selection is not temperature.
+
+Sampling entropy ($N=400$): $0$ bits at $\tau=0$; $1.79$ bits at $\tau=1.5$. Numerical flips occur only on $\{\Delta\ell\le 2\eta\}$ (off-tie flips $0/400$; $p_{\mathrm{flip}}=0.125$ at $\eta=1.5$, $0.32$ at $\eta=2.5$). Cascade after a one-bit memory split: mean Hamming $1.81\to 7.31$ over five steps; action-disagreement $0.905$ then $0.585$ ($\tau=0.8$, $N=200$). Self-observation on a failing trace chooses graph mutation. Spawn trainer leaves model id unchanged; mount is the $f_\theta$ jump.
+
+\subsection{Live serving channel}
+
+Six rollouts at $\tau=0.7$ on \texttt{deepseek/deepseek-v4-flash-0731}: word-reverse $2/2$ hit in one step; calculator $2/2$ hit in two steps (add then mul); retrieval-QA $2/2$ hit in one step. Traces in \texttt{experiments/live-0731.json}. Absent a key, DeterministicProvider is used. We do not invent further numbers.
+
+\section{What this buys a builder}
+
+In vdom-harness, improveLoop is already control given Obs: topology, capability, or adapter, gated by eval; unmount is rollback. Make Obs a first-class memory write. Keep the trainer out-of-process. Slow-clock mounts stay gated.
+
+\section{Conclusion}
+
+The paper exists because a vdom agent can watch itself and then edit its loop or dispatch a weight update that must not interrupt serving. Typed noise is the language; self-observation plus dual intervention is the act.
+
+
+\subsection*{AI use statement}
+Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. We take responsibility for the final content.
+\subsection*{Reproducibility statement}
+See paper/FRAMEWORK.md, experiments/, and the vdom-harness companion.
+\bibliography{iclr2027_conference}
+\bibliographystyle{iclr2027_conference}
+\end{document}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="280" viewBox="0 0 480 280">
+  <rect width="480" height="280" fill="white"/>
+  <text x="240" y="18" text-anchor="middle" font-family="Times, serif" font-size="13">Cascade: Hamming(H, H') after one memory-bit split</text>
+  <line x1="52" y1="240" x2="464" y2="240" stroke="#222"/>
+  <line x1="52" y1="28" x2="52" y2="240" stroke="#222"/>
+  <path d="M 52.0 187.5 L 155.0 142.8 L 258.0 101.4 L 361.0 61.9 L 464.0 28.0" fill="none" stroke="#1f4e8c" stroke-width="2"/>
+  <circle cx="52.0" cy="187.5" r="2.5" fill="#1f4e8c"/>
+  <circle cx="155.0" cy="142.8" r="2.5" fill="#1f4e8c"/>
+  <circle cx="258.0" cy="101.4" r="2.5" fill="#1f4e8c"/>
+  <circle cx="361.0" cy="61.9" r="2.5" fill="#1f4e8c"/>
+  <circle cx="464.0" cy="28.0" r="2.5" fill="#1f4e8c"/>
+  <text x="240" y="270" text-anchor="middle" font-family="Times, serif" font-size="11">step n</text>
+  <text x="14" y="140" text-anchor="middle" font-family="Times, serif" font-size="11" transform="rotate(-90 14 140)">mean Hamming</text>
+</svg>

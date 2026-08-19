@@ -1,0 +1,408 @@
+{
+  "generatedAt": "2026-08-19T06:40:00.067Z",
+  "providerFallback": "deterministic",
+  "keyed": false,
+  "sampling": [
+    {
+      "temperature": 0,
+      "uniqueActions": 1,
+      "entropy": 0,
+      "N": 400
+    },
+    {
+      "temperature": 0.3,
+      "uniqueActions": 2,
+      "entropy": 0.025211865892934702,
+      "N": 400
+    },
+    {
+      "temperature": 0.7,
+      "uniqueActions": 5,
+      "entropy": 0.5535823896357035,
+      "N": 400
+    },
+    {
+      "temperature": 1,
+      "uniqueActions": 5,
+      "entropy": 1.2359502670719071,
+      "N": 400
+    },
+    {
+      "temperature": 1.5,
+      "uniqueActions": 5,
+      "entropy": 1.7895240064338487,
+      "N": 400
+    }
+  ],
+  "firstPassage": [
+    {
+      "taskId": "word-reverse",
+      "temperature": 0,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 0,
+      "bestOfK": 4,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 0,
+      "bestOfK": 16,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 0.5,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.16,
+      "meanTauS": 3.75,
+      "meanCost": 5.635,
+      "nSuccess": 32
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 0.5,
+      "bestOfK": 4,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 0.5,
+      "bestOfK": 16,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.735,
+      "meanTauS": 3.197278911564626,
+      "meanCost": 3.565,
+      "nSuccess": 147
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1,
+      "bestOfK": 4,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.02,
+      "meanTauS": 3.25,
+      "meanCost": 5.945,
+      "nSuccess": 4
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1,
+      "bestOfK": 16,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1.5,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.755,
+      "meanTauS": 2.748344370860927,
+      "meanCost": 2.77,
+      "nSuccess": 151
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1.5,
+      "bestOfK": 4,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.2,
+      "meanTauS": 3.8,
+      "meanCost": 5.56,
+      "nSuccess": 40
+    },
+    {
+      "taskId": "word-reverse",
+      "temperature": 1.5,
+      "bestOfK": 16,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 0,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 0,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 0.7,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.42,
+      "meanTauS": 3.892857142857143,
+      "meanCost": 4.995,
+      "nSuccess": 84
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 0.7,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 6,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 1.2,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.645,
+      "meanTauS": 3.387596899224806,
+      "meanCost": 3.97,
+      "nSuccess": 129
+    },
+    {
+      "taskId": "calculator",
+      "temperature": 1.2,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.005,
+      "meanTauS": 3,
+      "meanCost": 5.985,
+      "nSuccess": 1
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 0,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 5,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 0,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 5,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 0.7,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.42,
+      "meanTauS": 2.75,
+      "meanCost": 3.945,
+      "nSuccess": 84
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 0.7,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 5,
+      "nSuccess": 0
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 1.2,
+      "bestOfK": 1,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0.63,
+      "meanTauS": 2.5476190476190474,
+      "meanCost": 3.19,
+      "nSuccess": 126
+    },
+    {
+      "taskId": "retrieval-qa",
+      "temperature": 1.2,
+      "bestOfK": 8,
+      "modelId": "toy-naive",
+      "N": 200,
+      "pHit": 0,
+      "meanTauS": null,
+      "meanCost": 5,
+      "nSuccess": 0
+    }
+  ],
+  "cascade": [
+    {
+      "n": 1,
+      "meanHamming": 1.81,
+      "disagreeAction": 0.905,
+      "meanTvGen": 0.9057396327863969
+    },
+    {
+      "n": 2,
+      "meanHamming": 3.35,
+      "disagreeAction": 0.77,
+      "meanTvGen": 0.7651066208997076
+    },
+    {
+      "n": 3,
+      "meanHamming": 4.78,
+      "disagreeAction": 0.715,
+      "meanTvGen": 0.7010572536468974
+    },
+    {
+      "n": 4,
+      "meanHamming": 6.14,
+      "disagreeAction": 0.68,
+      "meanTvGen": 0.6561176861054296
+    },
+    {
+      "n": 5,
+      "meanHamming": 7.31,
+      "disagreeAction": 0.585,
+      "meanTvGen": 0.5797204212849344
+    }
+  ],
+  "gap": [
+    {
+      "eta": 0,
+      "nTrials": 400,
+      "nFlip": 0,
+      "pFlip": 0,
+      "pFlipWhenGapLeq2eta": 0,
+      "nNearTie": 0,
+      "nFlipOffTie": 0
+    },
+    {
+      "eta": 0.2,
+      "nTrials": 400,
+      "nFlip": 0,
+      "pFlip": 0,
+      "pFlipWhenGapLeq2eta": 0,
+      "nNearTie": 0,
+      "nFlipOffTie": 0
+    },
+    {
+      "eta": 0.5,
+      "nTrials": 400,
+      "nFlip": 0,
+      "pFlip": 0,
+      "pFlipWhenGapLeq2eta": 0,
+      "nNearTie": 0,
+      "nFlipOffTie": 0
+    },
+    {
+      "eta": 1,
+      "nTrials": 400,
+      "nFlip": 0,
+      "pFlip": 0,
+      "pFlipWhenGapLeq2eta": 0,
+      "nNearTie": 400,
+      "nFlipOffTie": 0
+    },
+    {
+      "eta": 1.5,
+      "nTrials": 400,
+      "nFlip": 50,
+      "pFlip": 0.125,
+      "pFlipWhenGapLeq2eta": 0.125,
+      "nNearTie": 400,
+      "nFlipOffTie": 0
+    },
+    {
+      "eta": 2.5,
+      "nTrials": 400,
+      "nFlip": 128,
+      "pFlip": 0.32,
+      "pFlipWhenGapLeq2eta": 0.32,
+      "nNearTie": 400,
+      "nFlipOffTie": 0
+    }
+  ],
+  "providerProbe": {
+    "provider": "deterministic",
+    "model": "deterministic",
+    "keyed": false,
+    "N": 8,
+    "outputs": [
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod",
+      "lautriv mod"
+    ],
+    "unique": 1
+  }
+}
