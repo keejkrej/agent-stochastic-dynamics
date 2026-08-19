@@ -23,7 +23,7 @@ Independent \thanks{Affiliation TODO.} \\
 \maketitle
 
 \begin{abstract}
-Self-improvement at runtime is the point because a kernel fitted to a public leaderboard does not transfer to real use or to private datasets. Once the agent is deployed on data you cannot scrape or tune against, a static \(K_C\) is the wrong object: the agent must be able to change \(C\) or \(\theta\) after deployment. We establish a runtime self-improvement framework with theoretical support so that process is well-defined. An LLM agent is a controlled hybrid Markov process on state \(X=(H,M,E,C)\) with kernel \(K_C\) and three typed noise channels (sampling, numerical, environmental). Self-observation \(\mathrm{Obs}\) maps traces, first-passage proxies, and completion (hung / transfer / crash) into memory \(M\). The loop is \(\mathrm{Obs}\to I_{\mathrm{loop}}\mid I_{\mathrm{weight}}\to\mathrm{Obs}\) on two clocks. \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) while serving does not pause. \(I_{\mathrm{weight}}\) dispatches an asynchronous trainer on a slow clock; serving continues on the old weights until a gated \(\theta\) swap. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology or policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all. \(\tau^2\) and the 0731 traces are diagnostics that the loop ran and that \(\mathrm{Obs}\) chose an arm, not a bench to max. We report them honestly and do not claim SOTA. Live airline \(39/44/41\): generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) and a first policy draft \(0.333\to 0\) licensed a typed \(I_{\mathrm{loop}}\); one subsequent policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.333\to 0.667\). That is a diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. It is not saturation and not a \(\tau^2\) SOTA claim. The remaining miss is still \(I_{\mathrm{loop}}\)-shaped; remaining transfers license \(I_{\mathrm{weight}}\). A mock closed loop \(0\to 0.5\to 1.0\) on \texttt{update\_task\_1} / \texttt{impossible\_task\_1} is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point. The trainer in the accompanying runtime is a protocol stub (\texttt{FakeTrainer}).
+Self-improvement at runtime is the point because a kernel fitted to a public leaderboard does not transfer to real use or to private datasets. Once the agent is deployed on data you cannot scrape or tune against, a static \(K_C\) is the wrong object: the agent must be able to change \(C\) or \(\theta\) after deployment. We establish a runtime self-improvement framework with theoretical support so that process is well-defined. An LLM agent is a controlled hybrid Markov process on state \(X=(H,M,E,C)\) with kernel \(K_C\) and three typed noise channels (sampling, numerical, environmental). Self-observation \(\mathrm{Obs}\) maps traces, first-passage proxies, and completion (hung / transfer / crash) into memory \(M\). The loop is \(\mathrm{Obs}\to I_{\mathrm{loop}}\mid I_{\mathrm{weight}}\to\mathrm{Obs}\) on two clocks. \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) while serving does not pause. \(I_{\mathrm{weight}}\) dispatches an asynchronous trainer on a slow clock; serving continues on the old weights until a gated \(\theta\) swap. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology or policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all. \(\tau^2\) and the 0731 traces are diagnostics that the loop ran and that \(\mathrm{Obs}\) chose an arm, not a bench to max. We report them honestly and do not claim SOTA, reliability, or a \(\tau^2\) win. Held-out airline (ten tasks the checklist was not written for; one trial): one policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.7\to 0.9\), including a regression. That diagnoses that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. It is not \(k>1\) reliability and not saturation. A 3-trial replication on the overfit slice is secondary (\(\mathrm{pass}^3\) stays \(0.333\)); the earlier \(0.333\to 0.667\) was \(n=1\) on that same slice. Remaining transfers license \(I_{\mathrm{weight}}\). A mock closed loop \(0\to 0.5\to 1.0\) on \texttt{update\_task\_1} / \texttt{impossible\_task\_1} is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point. The trainer in the accompanying runtime is a protocol stub (\texttt{FakeTrainer}).
 \end{abstract}
 
 \section{The framework}
@@ -188,28 +188,12 @@ Implementation: \url{https://github.com/keejkrej/vdom-harness}. \texttt{improveL
 
 Only the protocol and the two clocks are claimed. Spawn does not mutate \(C\) (Lemma~\ref{lem:spawn}). The fast process keeps \(K_C\) and the old \(f_\theta\). A slow-clock job returns an artifact; a gate reads fixture \(\hat p_{\mathrm{hit}}\) (or \(\mathrm{pass}^k\)); mount is a jump; reject and rollback are the identity and the inverse. The accompanying runtime implements this with \texttt{FakeTrainer}: a trainer stub that registers a deterministic adapted provider. That is a protocol demo, not a LoRA, not an HF Job, and not evidence that \(I_{\mathrm{weight}}\) raised any live \(p_{\mathrm{hit}}\). We do not treat the stub as a measured weight update.
 
-\subsection{Live airline: \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved}
+\subsection{Held-out airline is the eval: \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved}
 \label{sec:airloop}
 
-Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, official airline tasks \(39,44,41\), \(k=1\), user simulator and NL-assertion judge pinned to the same model. Serving did not pause. Not invented. Not SOTA. Not saturation.
+This subsection is the eval. The policy-checklist was not written for these task IDs. Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, official airline tasks \(18,20,23,25,30,35,38,42,45,48\), one trial, max two rounds, user simulator and NL-assertion judge pinned to the same model. One \(I_{\mathrm{loop}}\) only: a policy-checklist mount. Official \(\tau^2\) DB hash. Serving did not pause. Audit: no gold reservation ID and no gold action leaked into the live prompt. A policy node encodes rules, never task-specific identifiers. Method overfit on \(39/41/44\) is why this slice exists. Not invented. Not SOTA. Not reliability. Not a \(\tau^2\) win.
 
-Older traces licensed the typed \(I_{\mathrm{loop}}\). Generic ladder: \texttt{experiments/improve-live-0731.json}. First policy draft on the same slice went \(0.333\to 0\).
-
-\begin{center}
-\small
-\begin{tabular}{clll}
-\toprule
-Cycle \(t\) & \(\mathrm{Obs}\) / completion & \(P^{\mathrm{ctrl}}\) & \(p_{\mathrm{hit}}\) \\
-\midrule
-\(0\) & naive \(C_0\); \(39{=}0\), \(41{=}1\), \(44{=}0\) & --- & \(0.333\) \\
-\(1\) & \(39,44\) miss; \(41\) hung \({>}8\) min & generic \(I_{\mathrm{loop}}\) (Self-Refine) & \(0\) \\
-\(2\) & \(39\) miss, \(41\) hit, \(44\) miss & generic \(I_{\mathrm{loop}}\) (validator) & \(0.333\) \\
---- & same slice; policy miss persists & first policy draft & \(0.333\to 0\) \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-Then one \(I_{\mathrm{loop}}\) that mounted policy-checklist (merged vdom-harness PR~\#7). It did not cycle Self-Refine / validator. JSON: \texttt{experiments/improve-live-0731-policy-v2.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-policy-v2.json}, run \texttt{improve-airline-20260819T161900Z.json}, finished 18:19 CEST 2026-08-19). \(\mathrm{stopReason}\): \texttt{loop-exhausted}.
+JSON: \texttt{experiments/improve-live-0731-heldout.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-heldout.json}). \(\mathrm{stopReason}\): \texttt{loop-exhausted}.
 
 \begin{center}
 \small
@@ -217,22 +201,43 @@ Then one \(I_{\mathrm{loop}}\) that mounted policy-checklist (merged vdom-harnes
 \toprule
 Cycle \(t\) & \(\mathrm{Obs}\) / completion & \(P^{\mathrm{ctrl}}\) & \(p_{\mathrm{hit}}\) \\
 \midrule
-\(0\) & naive \(C_0\); \(39{=}0\), \(41{=}1\), \(44{=}0\) & --- & \(0.333\) \\
-\(1\) & \(39{=}1\), \(41{=}1\), \(44{=}0\) & \(I_{\mathrm{loop}}\) (policy-checklist) & \(0.667\) \\
+\(0\) & naive \(C_0\); misses \(23,35,48\); hits the other 7 & --- & \(0.7\) \\
+\(1\) & lifts \(23,35,48\); regression \(18\) (\(1\to 0\)) & \(I_{\mathrm{loop}}\) (policy-checklist) & \(0.9\) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Completion is first-class. Round 0: 1 finished, 2 transfer, 0 hung, 0 error. Round 1: 2 finished, 1 transfer, 0 hung, 0 error. Total \(3/6\) transferred. No \texttt{ValueError} this run.
+Completion is first-class. Round 0: 8 finished, 2 transfer, 0 hung, 0 error. Round 1: 9 finished, 1 transfer, 0 hung, 0 error.
 
-Per-task (gold reservation ids are reported as misses, never encoded as the method):
+Per-task (task IDs only; gold reservation IDs are not the method and are not listed):
 \begin{itemize}
-\item Task 39: \(0\to 1\). One-shot cancelled 8C8K4E{+}LU15PA, missed MSJ4OA, then transferred. Policy-checklist issued three \texttt{cancel\_reservation} including MSJ4OA (DB \(1.0\)).
-\item Task 44: \(0\to 0\). One-shot did not cancel S61CZX (correct) but missed H8Q05L. Policy-checklist wrongly cancelled S61CZX and missed KC18K6. Still DB \(0\). That remaining miss is a policy-write error after the episode finished: still \(I_{\mathrm{loop}}\)-shaped.
-\item Task 41: \(1\to 1\) both rounds.
+\item One-shot misses: \(23\), \(35\), \(48\). Hits: \(18,20,25,30,38,42,45\).
+\item Policy-checklist lifts \(23\), \(35\), \(48\).
+\item Regression on \(18\): \(1\to 0\). The other six one-shot hits stay hits.
 \end{itemize}
 
-This is a diagnostic that the loop ran, that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\), and that \(C\) moved. It is not a \(\tau^2\) SOTA claim and not saturation. Remaining transfers (\(3/6\)) license \(I_{\mathrm{weight}}\): the model still does not complete many episodes. \texttt{FakeTrainer} stays a protocol stub; we do not claim a measured weight update.
+This is a diagnostic that the loop ran, that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\), and that \(C\) moved---including a regression. Benchmaxxing does not transfer: a typed mount fitted to \(39/41/44\) also broke a held-out hit. Do not read \(0.7\to 0.9\) as \(\mathrm{pass}^k\) reliability; still one trial. Remaining transfers license \(I_{\mathrm{weight}}\). \texttt{FakeTrainer} stays a protocol stub; we do not claim a measured weight update.
+
+\subsection{Replication on the overfit slice is secondary}
+\label{sec:airrep}
+
+Official airline \(39/41/44\), three trials, same model, official DB hash. The method was written against this slice; the numbers below are a replication, not the eval. JSON: \texttt{experiments/improve-live-0731-replication.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-replication.json}).
+
+\begin{center}
+\small
+\begin{tabular}{lccc}
+\toprule
+ & \(\mathrm{pass}^1\) & \(\mathrm{pass}^2\) & \(\mathrm{pass}^3\) \\
+\midrule
+one-shot & \(0.333\) & \(0.333\) & \(0.333\) \\
+policy-checklist \(I_{\mathrm{loop}}\) & \(0.556\) & \(0.444\) & \(0.333\) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\(\mathrm{pass}^3\) is flat. Per-task trials: \(39\) goes \(0/3\to 2/3\); \(44\) stays \(0/3\to 0/3\); \(41\) stays \(3/3\to 3/3\). The earlier \(0.333\to 0.667\) was \(n=1\) on this same slice (\texttt{experiments/improve-live-0731-policy-v2.json}). Do not lead with \(0.667\).
+
+Older traces that licensed the typed arm, still on this slice: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) (\texttt{experiments/improve-live-0731.json}); first policy draft \(0.333\to 0\). Generic Self-Refine / validator did not leave the miss. That is licensing history, not the eval.
 
 \subsection{Mock closed loop is a protocol unit test}
 \label{sec:mock}
@@ -269,24 +274,24 @@ retrieval-QA & \(0.7\) & \(12\) & \(12/12\) & \(1\) \\
 \end{tabular}
 \end{center}
 
-Word-reverse and calculator sit in temperature-invariant action attractors (consecutive-repeat rate \(60/60=1\)). Calculator's first tool is already correct (\(24/24\)); \(M\) contains the write of \(8\); generation does not consume it. Retrieval hits (\(12/12\), \(\tau_S=1\)). \(\tau=0\) already fails; \(\tau=0.7\) does not change \(p_{\mathrm{hit}}\) on the failures. Numerical tags: \(0/312\). By greedy collapse, residual randomness is a loop in the policy. A one-bit memory coupling sometimes leaves the attractor; temperature never does. Therefore \(\mathrm{Obs}\) licenses \(I_{\mathrm{loop}}\) on these fixtures. On the airline diagnostic in \S\ref{sec:airloop}, generic \(I_{\mathrm{loop}}\) did not leave the miss; a typed policy-checklist later moved \(C\). The remaining task-44 miss is still \(I_{\mathrm{loop}}\)-shaped. Remaining transfers license \(I_{\mathrm{weight}}\).
+Word-reverse and calculator sit in temperature-invariant action attractors (consecutive-repeat rate \(60/60=1\)). Calculator's first tool is already correct (\(24/24\)); \(M\) contains the write of \(8\); generation does not consume it. Retrieval hits (\(12/12\), \(\tau_S=1\)). \(\tau=0\) already fails; \(\tau=0.7\) does not change \(p_{\mathrm{hit}}\) on the failures. Numerical tags: \(0/312\). By greedy collapse, residual randomness is a loop in the policy. A one-bit memory coupling sometimes leaves the attractor; temperature never does. Therefore \(\mathrm{Obs}\) licenses \(I_{\mathrm{loop}}\) on these fixtures. On the held-out airline eval in \S\ref{sec:airloop}, one typed policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. That is arm choice, not a \(\tau^2\) win. Remaining transfers license \(I_{\mathrm{weight}}\).
 
 \section{Discussion}
 
 The contribution is the framework and the theory---so an agent can change \(C\) or \(\theta\) after deployment, on data you cannot scrape or tune against. Hybrid state \(X=(H,M,E,C)\), kernel \(K_C\), three typed noise channels, \(\mathrm{Obs}\) (traces + first-passage proxies + hung / transfer / crash), two licensed interventions on two clocks, and an arm-choice rule. \(\tau^2\) and the 0731 traces remain diagnostics that the loop exists and that \(\mathrm{Obs}\) can pick an arm, not a bench to max.
 
-The 0731 toys license \(I_{\mathrm{loop}}\) on sequential-tool attractors. Older live airline traces (generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\), first policy draft \(0.333\to 0\)) licensed a typed policy-checklist \(I_{\mathrm{loop}}\); one such mount moved \(p_{\mathrm{hit}}\) \(0.333\to 0.667\). That is a diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved, not a \(\tau^2\) SOTA claim and not saturation. The remaining miss is still \(I_{\mathrm{loop}}\)-shaped; remaining transfers license \(I_{\mathrm{weight}}\). The five-task retail \(1.0\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point. The mock \(0\to 0.5\to 1.0\) is a protocol unit test. None of these is a \(\tau^2\) SOTA claim.
+The 0731 toys license \(I_{\mathrm{loop}}\) on sequential-tool attractors. Held-out airline is the eval: one policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.7\to 0.9\) at \(k=1\), including a regression on a task the one-shot already hit. That diagnoses that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. It is not reliability, not saturation, and not a \(\tau^2\) win. Benchmaxxing on \(39/41/44\) does not transfer; a 3-trial replication there is secondary (\(\mathrm{pass}^3\) stays \(0.333\)). The earlier \(0.333\to 0.667\) was \(n=1\) on that overfit slice. Remaining transfers license \(I_{\mathrm{weight}}\). The five-task retail \(1.0\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point. The mock \(0\to 0.5\to 1.0\) is a protocol unit test. None of these is a \(\tau^2\) SOTA claim.
 
 In the accompanying runtime \citep{vdomharness}, \texttt{improveLoop} already iterates. Keep \(\mathrm{Obs}\) a first-class memory write after every cycle, including after a gated mount. Keep the trainer out-of-process. Label \texttt{FakeTrainer} as a protocol demo until a real slow-clock job exists. Papers, blogs, GitHub, and other agents remain inputs, not the product.
 
 \section{Conclusion}
 
-A static kernel fitted to a public leaderboard is the wrong object once the agent is deployed on private data. We established a runtime self-improvement framework with theoretical support so \(C\) or \(\theta\) can change after that deployment. An LLM agent is a controlled hybrid Markov process \(X=(H,M,E,C)\) with kernel \(K_C\) and three typed noise channels. \(\mathrm{Obs}\) writes traces, first-passage proxies, and completion (hung / transfer / crash) into \(M\). \(I_{\mathrm{loop}}\) mutates \(C\) without pausing serving. \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap; serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) for topology / policy attractors; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Older negative \(I_{\mathrm{loop}}\) traces licensed a typed policy-checklist; one live mount moved airline \(p_{\mathrm{hit}}\) \(0.333\to 0.667\). That is existence of \(C\) moving, not SOTA and not saturation. Remaining transfers license \(I_{\mathrm{weight}}\). The mock closed loop is a unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. \texttt{FakeTrainer} is a protocol stub. We do not claim SOTA or a measured weight update.
+A static kernel fitted to a public leaderboard is the wrong object once the agent is deployed on private data. We established a runtime self-improvement framework with theoretical support so \(C\) or \(\theta\) can change after that deployment. An LLM agent is a controlled hybrid Markov process \(X=(H,M,E,C)\) with kernel \(K_C\) and three typed noise channels. \(\mathrm{Obs}\) writes traces, first-passage proxies, and completion (hung / transfer / crash) into \(M\). \(I_{\mathrm{loop}}\) mutates \(C\) without pausing serving. \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap; serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) for topology / policy attractors; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Held-out airline: one policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.7\to 0.9\) at \(k=1\), including a regression. That is existence of \(C\) moving, not SOTA, not reliability, and not a \(\tau^2\) win. Remaining transfers license \(I_{\mathrm{weight}}\). The mock closed loop is a unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. \texttt{FakeTrainer} is a protocol stub. We do not claim SOTA or a measured weight update.
 
 \subsection*{AI use statement}
-Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Reported live airline diagnostics are copied from \texttt{experiments/improve-live-0731.json} and \texttt{experiments/improve-live-0731-policy-v2.json}. We take responsibility for the final content.
+Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Reported live airline diagnostics are copied from \texttt{experiments/improve-live-0731-heldout.json} (eval) and \texttt{experiments/improve-live-0731-replication.json} (overfit-slice secondary), with older licensing traces in \texttt{experiments/improve-live-0731.json} and \texttt{experiments/improve-live-0731-policy-v2.json}. We take responsibility for the final content.
 \subsection*{Reproducibility statement}
-See paper/FRAMEWORK.md, paper/ANALYSIS.md, paper/ANALYSIS\_STATIC\_TAU2.md, experiments/improve-live-0731.json, experiments/improve-live-0731-policy-v2.json, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{python -m tau2\_vdom.improve}). Live airline: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\); first policy draft \(0.333\to 0\); typed policy-checklist \(I_{\mathrm{loop}}\) \(0.333\to 0.667\). Mock protocol unit test \(0\to 0.5\to 1.0\). \(I_{\mathrm{weight}}\) trainer: \texttt{FakeTrainer} stub.
+See paper/FRAMEWORK.md, paper/ANALYSIS.md, paper/ANALYSIS\_STATIC\_TAU2.md, experiments/improve-live-0731-heldout.json, experiments/improve-live-0731-replication.json, experiments/improve-live-0731.json, experiments/improve-live-0731-policy-v2.json, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{python -m tau2\_vdom.improve}). Held-out airline (eval): policy-checklist \(I_{\mathrm{loop}}\) \(0.7\to 0.9\) at \(k=1\), including a regression. Replication on the overfit slice: \(\mathrm{pass}^1\) \(0.333\to 0.556\), \(\mathrm{pass}^2\) \(0.333\to 0.444\), \(\mathrm{pass}^3\) \(0.333\to 0.333\). The earlier \(0.333\to 0.667\) was \(n=1\) on that slice. Mock protocol unit test \(0\to 0.5\to 1.0\). \(I_{\mathrm{weight}}\) trainer: \texttt{FakeTrainer} stub.
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 \end{document}

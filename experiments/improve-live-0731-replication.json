@@ -1,0 +1,72 @@
+{
+  "benchmark": "tau2-bench",
+  "kind": "runtime-self-improvement",
+  "role": "replication-overfit-slice-secondary",
+  "closedLoop": true,
+  "live": true,
+  "domain": "airline",
+  "taskIds": [
+    "39",
+    "41",
+    "44"
+  ],
+  "numTrials": 3,
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "userLlm": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "nlAssertionJudge": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "provider": "openrouter",
+  "agent": "vdom",
+  "rewardBasis": "official tau2 DB hash (airline DB × COMMUNICATE)",
+  "officialDbHash": true,
+  "servingPaused": false,
+  "passHatKBefore": {
+    "1": 0.3333333333333333,
+    "2": 0.3333333333333333,
+    "3": 0.3333333333333333
+  },
+  "passHatKAfter": {
+    "1": 0.5555555555555556,
+    "2": 0.4444444444444444,
+    "3": 0.3333333333333333
+  },
+  "passHatKReported": {
+    "note": "Yao pass^k = mean over tasks of C(c,k)/C(n,k). Report 0.333→0.556 / 0.333→0.444 / 0.333→0.333. pass^3 is flat.",
+    "pass1": "0.333 → 0.556",
+    "pass2": "0.333 → 0.444",
+    "pass3": "0.333 → 0.333"
+  },
+  "interventions": [
+    "I_loop"
+  ],
+  "mounted": "policy-checklist",
+  "perTaskTrials": {
+    "39": {
+      "before": "0/3",
+      "after": "2/3",
+      "passKBefore": { "1": 0.0, "2": 0.0, "3": 0.0 },
+      "passKAfter": { "1": 0.6666666666666666, "2": 0.3333333333333333, "3": 0.0 }
+    },
+    "41": {
+      "before": "3/3",
+      "after": "3/3",
+      "passKBefore": { "1": 1.0, "2": 1.0, "3": 1.0 },
+      "passKAfter": { "1": 1.0, "2": 1.0, "3": 1.0 }
+    },
+    "44": {
+      "before": "0/3",
+      "after": "0/3",
+      "passKBefore": { "1": 0.0, "2": 0.0, "3": 0.0 },
+      "passKAfter": { "1": 0.0, "2": 0.0, "3": 0.0 }
+    }
+  },
+  "priorN1OnSameSlice": {
+    "pHitSequence": [0.3333333333333333, 0.6666666666666666],
+    "sourceFile": "experiments/improve-live-0731-policy-v2.json",
+    "note": "The earlier 0.333→0.667 was n=1 on this same slice. Do not lead with 0.667."
+  },
+  "promptAudit": "No gold reservation ID and no gold action leaked into the live prompt. Method overfit on 39/41/44 is why the held-out slice exists.",
+  "honestNote": "Secondary replication on the overfit slice. pass^1 0.333→0.556, pass^2 0.333→0.444, pass^3 0.333→0.333 (flat). Task 39: 0/3→2/3; 44: 0/3→0/3; 41: 3/3→3/3. Do not lead with the n=1 0.667. Not SOTA, not reliability, not a tau2 win. Official DB hash. Not invented.",
+  "sourceFile": "eval/tau2/improve-live-0731-replication.json",
+  "sourceRepo": "vdom-harness",
+  "command": "PYTHONPATH=python python3 -m tau2_vdom.improve --domain airline --task-ids 39 41 44 --num-trials 3 --model deepseek/deepseek-v4-flash-0731"
+}
