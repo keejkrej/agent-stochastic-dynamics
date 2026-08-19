@@ -17,4 +17,5 @@ Papers, blogs, GitHub, X, and other agents are **inputs** to that runtime, not t
 
 - ICLR 2027 draft: `paper/iclr2027/main.tex`
 - Venue track: `paper/NOTES_VENUE.md`
+- 0731 diagnostic (I_loop first; τ²-bench as eval, no invented scores): `paper/ANALYSIS.md`
 - Math \(\leftrightarrow\) runtime map: `docs/VDOM_INTERFACE.md`
