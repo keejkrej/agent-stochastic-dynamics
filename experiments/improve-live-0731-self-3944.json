@@ -1,0 +1,92 @@
+{
+  "benchmark": "tau2-bench",
+  "kind": "runtime-self-improvement",
+  "role": "diagnostic",
+  "closedLoop": true,
+  "live": true,
+  "domain": "airline",
+  "taskIds": ["39", "44"],
+  "numTrials": 1,
+  "maxRounds": 1,
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "provider": "openrouter",
+  "agent": "vdom",
+  "date": "2026-08-19",
+  "selfObsPath": "self",
+  "servingPaused": false,
+  "midTurnGetSetAgentGraph": 0,
+  "iWeightLicensed": false,
+  "iWeightNote": "Both episodes completed with writes. I_weight is not licensed.",
+  "pHitSequence": [0.5, 0.0],
+  "passHatK": {
+    "note": "k=1 only. Do not read 0.5→0.0 as a SOTA miss or as pass^k reliability.",
+    "before": { "1": 0.5 },
+    "after": { "1": 0.0 }
+  },
+  "interventions": ["I_loop"],
+  "rounds": [
+    {
+      "round": 0,
+      "technique": "one-shot",
+      "pHit": 0.5,
+      "taskPHit": { "39": 0.0, "44": 1.0 },
+      "obs": {
+        "39": "I_loop",
+        "44": "wait"
+      },
+      "notes": {
+        "39": "miss. cancel 8C8K4E+LU15PA matched; MSJ4OA action_match false. Live-trace IDs, not gold injected into the prompt.",
+        "44": "hit. Obs wait. three business upgrades matched."
+      },
+      "intervention": null
+    },
+    {
+      "round": 1,
+      "technique": "self-obs I_loop",
+      "pHit": 0.0,
+      "taskPHit": { "39": 0.0, "44": 0.0 },
+      "mounted": "cancel_policy",
+      "mountScope": "global-unscoped",
+      "wrongAttractor": "model returned valid I_loop JSON and mounted a global cancel_policy because it thought 44 (sophia) needed a cancel",
+      "notes": {
+        "39": "still miss; same MSJ4OA action_match false",
+        "44": "regression 1→0. KC18K6 action_match false; same IDs, args drifted"
+      },
+      "intervention": "I_loop"
+    }
+  ],
+  "perTask": {
+    "39": {
+      "pHit": [0.0, 0.0],
+      "obsR0": "I_loop",
+      "note": "remaining miss is MSJ4OA; not the wait-hit gate"
+    },
+    "44": {
+      "pHit": [1.0, 0.0],
+      "obsR0": "wait",
+      "note": "regression 1→0 under unscoped global I_loop"
+    }
+  },
+  "sameShapeAs": "held-out task 18: Obs said wait on a hit; a global I_loop still changed C for the whole slice",
+  "illegalApply": "unscoped global C change onto a wait-hit task",
+  "runtimeFix": {
+    "repo": "vdom-harness",
+    "pr": 10,
+    "merged": "2026-08-19",
+    "url": "https://github.com/keejkrej/vdom-harness/pull/10",
+    "title": "Gate I_loop: wait-hit tasks keep C0",
+    "applyScope": { "waitKept": "wait+hit served on C0", "looped": "miss/I_loop served on C1" },
+    "hostFallback": "applyILoop uses the same gate",
+    "mockStillHolds": "0→0.5→1.0",
+    "newLive0731AfterGate": false,
+    "note": "No new live 0731 numbers after the gate. Do not invent any."
+  },
+  "stillMissing": [
+    "serving mid-turn get_agent_graph / set_agent_graph was never called (zero calls)",
+    "task 39 remaining miss (MSJ4OA) is not PR #10",
+    "I_weight is not licensed (episodes completed with writes)"
+  ],
+  "honestNote": "Diagnostic that the loop ran and Obs chose I_loop (self path). Unscoped global C change is an illegal apply, not a failed SOTA attempt. Do not lead with 0.5→0.0. The eval remains held-out 0.7→0.9 (better than this control, not self-reflection).",
+  "sourceFile": "eval/tau2/improve-live-0731-self-3944.json",
+  "sourceRepo": "vdom-harness"
+}
