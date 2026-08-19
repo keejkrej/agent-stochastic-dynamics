@@ -8,7 +8,7 @@
 
 Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
 
-**Status.** Cycle scores $\mathrm{pass}^k(t)$ on $\tau^2$ are **TO RUN**. Do not invent them. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` (already iterates) + `python -m tau2_vdom` (registers `--agent vdom`). Existing numbers below are real and are *not* that figure:
+**Status.** A live closed loop on $\tau^2$ now exists: `experiments/improve-live-0731.json` (2026-08-19 14:11 CEST). Official airline tasks $39,44,41$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$. $\mathrm{pass}^1(t)=(1/3,\,0,\,1/3)$. $I_{\mathrm{loop}}$ (Self-Refine, then validator) did not raise $p_{\mathrm{hit}}$. Honest. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* that figure:
 
 - **Ceiling (easy slice, do not lead).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. Static score. $\mathrm{Obs}$ should `wait`. Not the loop.
 - **Diagnostic (licenses $I_{\mathrm{loop}}$ on cycle $t=0$, not the loop).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
@@ -24,7 +24,7 @@ Then it observes again. That iteration *is* the process.
 
 ---
 
-## 0. The result (closed loop + TO RUN)
+## 0. The result (closed loop)
 
 Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `improveLoop` already loops on `maxIters`; `python/tau2_vdom/` registers `--agent vdom`). Official $\tau^2$ owns domains, tools, user simulator, and `compute_metrics`. This repo does not reimplement retail.
 
@@ -48,12 +48,11 @@ PYTHONPATH=python python3 -m tau2_vdom \
 
 | Cycle $t$ | $\mathrm{Obs}(\mathrm{traces}_t)$ | $P^{\mathrm{ctrl}}$ | $\mathrm{pass}^1(t)$ | $\mathrm{pass}^k(t)$ |
 | --- | --- | --- | --- | --- |
-| $0$ | — (naive $C_0$) | — | **TO RUN** | **TO RUN** |
-| $1$ | TO RUN | $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ or wait | **TO RUN** | **TO RUN** |
-| $2$ | TO RUN | *again*, on new traces | **TO RUN** | **TO RUN** |
-| $\vdots$ | $\cdots$ | $\cdots$ | **TO RUN** | **TO RUN** |
+| $0$ | naive $C_0$; task $p_{\mathrm{hit}}$ 39=0, 41=1, 44=0 | — | $1/3$ | $1/3$ |
+| $1$ | 39 miss, 44 miss, 41 hung $>8$ min (skipped) | $I_{\mathrm{loop}}$ (Self-Refine) | $0$ | $0$ |
+| $2$ | 39 miss, 41 hit, 44 miss | $I_{\mathrm{loop}}$ (validator) | $1/3$ | $1/3$ |
 
-This table *is* the figure. When the JSON exists, cite it here and in `paper/iclr2027/main.tex`.
+This table *is* the figure. Measured live on OpenRouter `deepseek/deepseek-v4-flash-0731`, airline tasks $39,44,41$, $k=1$, `stopReason: loop-exhausted`, `servingPaused: false`. JSON: `experiments/improve-live-0731.json` (copied from vdom-harness `eval/tau2/improve-live-0731.json`). $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot. Round-1 $0$ is a smaller denominator (task 41 skipped). Not invented. Cite the same numbers in `paper/iclr2027/main.tex`.
 
 ---
 
@@ -279,10 +278,10 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 
 Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
-**The paper result is the closed loop** $\mathrm{pass}^k(t)$, not a static $\mathrm{pass}^k$ and not a one-shot before/after. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). We still do not invent a larger $\tau^2$ table.
+**The paper result is the closed loop** $\mathrm{pass}^k(t)$, not a static $\mathrm{pass}^k$ and not a one-shot before/after. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). The live 3-task airline loop is $1/3,0,1/3$; we still do not invent a larger $\tau^2$ table.
 
 ---
 
 ## 11. One-paragraph claim (for the paper)
 
-The process is a closed loop: self-observe → self-improve → self-observe → ⋯. Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock; $I_{\mathrm{weight}}$ jumps on the slow clock; then $\mathrm{Obs}$ reads the new traces. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$ (TO RUN; vdom-harness `improveLoop` + `tau2_vdom` / `--agent vdom`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That diagnostic licenses $I_{\mathrm{loop}}$ on cycle $t=0$; it is not the loop. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a ceiling, not the lead number. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, and spawn $\neq$ mount.
+The process is a closed loop: self-observe → self-improve → self-observe → ⋯. Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock; $I_{\mathrm{weight}}$ jumps on the slow clock; then $\mathrm{Obs}$ reads the new traces. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$ (live airline $39,44,41$ on 0731: $1/3,\,0,\,1/3$; $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$; vdom-harness `python -m tau2_vdom.improve`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That diagnostic licenses $I_{\mathrm{loop}}$ on cycle $t=0$; it is not the loop. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a ceiling, not the lead number. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, and spawn $\neq$ mount.

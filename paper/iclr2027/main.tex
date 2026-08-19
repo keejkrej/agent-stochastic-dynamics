@@ -23,7 +23,7 @@ Independent \thanks{Affiliation TODO.} \\
 \maketitle
 
 \begin{abstract}
-The process is a closed loop: self-observe $\to$ self-improve $\to$ self-observe $\to\cdots$. A virtual-DOM (vdom) agent reads its own traces, writes a critique into memory ($\mathrm{Obs}$), and applies $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$. That kernel is iterated on the fast clock. $I_{\mathrm{loop}}$ mutates the AgentGraph, so a deterministic reconciler changes the composition of the serving kernel $K_C$. $I_{\mathrm{weight}}$ dispatches an asynchronous trainer; serving keeps the old $f_\theta$; a gated mount is a jump on the slow clock. After either intervention the agent serves again, $\mathrm{Obs}$ reads the \emph{new} traces, and $P^{\mathrm{ctrl}}$ may fire again. $\mathrm{wait}$ is a fixed point. We write this on the hybrid state $X=(H,M,E,C)$ with typed noise (sampling, numerical, environmental) and two clocks. The eval functional is $\mathrm{pass}^k$: first-passage under $k$ i.i.d.\ repeats. The figure is the loop---$\mathrm{pass}^k(t)$ versus cycle $t$---not a one-shot before/after and not a static one-shot score. A live diagnostic licenses $I_{\mathrm{loop}}$ first; a five-task retail slice already saturates at $\mathrm{pass}^k=1.0$ under technique \texttt{one-shot} (a ceiling, not the loop). Cycle scores are not invented.
+The process is a closed loop: self-observe $\to$ self-improve $\to$ self-observe $\to\cdots$. A virtual-DOM (vdom) agent reads its own traces, writes a critique into memory ($\mathrm{Obs}$), and applies $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$. That kernel is iterated on the fast clock. $I_{\mathrm{loop}}$ mutates the AgentGraph, so a deterministic reconciler changes the composition of the serving kernel $K_C$. $I_{\mathrm{weight}}$ dispatches an asynchronous trainer; serving keeps the old $f_\theta$; a gated mount is a jump on the slow clock. After either intervention the agent serves again, $\mathrm{Obs}$ reads the \emph{new} traces, and $P^{\mathrm{ctrl}}$ may fire again. $\mathrm{wait}$ is a fixed point. We write this on the hybrid state $X=(H,M,E,C)$ with typed noise (sampling, numerical, environmental) and two clocks. The eval functional is $\mathrm{pass}^k$: first-passage under $k$ i.i.d.\ repeats. The figure is the loop---$\mathrm{pass}^k(t)$ versus cycle $t$---not a one-shot before/after and not a static one-shot score. A live diagnostic licenses $I_{\mathrm{loop}}$ first; a five-task retail slice already saturates at $\mathrm{pass}^k=1.0$ under technique \texttt{one-shot} (a ceiling, not the loop). A live airline closed loop on the same 0731 model gives $\mathrm{pass}^1(t)=(1/3,0,1/3)$: $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$. Not invented.
 \end{abstract}
 
 \section{The claim}
@@ -189,15 +189,14 @@ Copy official \texttt{compute\_metrics} per cycle. Do not invent $\mathrm{pass}^
 \toprule
 Cycle $t$ & $\mathrm{Obs}(\mathrm{traces}_t)$ & $P^{\mathrm{ctrl}}$ & $\mathrm{pass}^1(t)$ & $\mathrm{pass}^k(t)$ \\
 \midrule
-$0$ & --- (naive $C_0$) & --- & TO RUN & TO RUN \\
-$1$ & TO RUN & $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ or wait & TO RUN & TO RUN \\
-$2$ & TO RUN & \emph{again}, on new traces & TO RUN & TO RUN \\
-$\vdots$ & $\cdots$ & $\cdots$ & TO RUN & TO RUN \\
+$0$ & naive $C_0$; $39{=}0$, $41{=}1$, $44{=}0$ & --- & $1/3$ & $1/3$ \\
+$1$ & $39,44$ miss; $41$ hung ${>}8$ min (skipped) & $I_{\mathrm{loop}}$ (Self-Refine) & $0$ & $0$ \\
+$2$ & $39$ miss, $41$ hit, $44$ miss & $I_{\mathrm{loop}}$ (validator) & $1/3$ & $1/3$ \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-This table \emph{is} the figure: the self-observe / self-improve loop. Cells are \textbf{TO RUN}. A filled $t=0$ and $t=1$ only would still be a one-shot pair; keep cycling until $\mathrm{wait}$ or $t=T$. Toy word-reverse is not this eval.
+This table \emph{is} the figure: the self-observe / self-improve loop. Measured live, OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, airline tasks $39,44,41$, $k=1$, \texttt{stopReason: loop-exhausted}. JSON: \texttt{experiments/improve-live-0731.json}. $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot. Round-1 $0$ is a smaller denominator (task 41 skipped). Not invented. Toy word-reverse is not this eval.
 
 \subsection{Ceiling on an easy slice (do not lead with this)}
 \label{sec:ceiling}
@@ -243,16 +242,16 @@ The contribution is the self-observe / self-improve loop: iterate $P^{\mathrm{ct
 
 The 0731 diagnostic buys the first arm: $I_{\mathrm{loop}}$ before $I_{\mathrm{weight}}$ on sequential-tool attractors. The five-task retail $1.0$ buys a warning: $\mathrm{wait}$ on a saturated slice is a fixed point, not a result.
 
-In the accompanying runtime \citep{vdomharness}, \texttt{improveLoop} already iterates. Keep $\mathrm{Obs}$ a first-class memory write after every cycle, including after a gated mount. Keep the trainer out-of-process. Fill the cycle table of \S\ref{sec:torun} from official $\tau^2$ JSON. Papers, blogs, GitHub, and other agents remain inputs, not the product.
+In the accompanying runtime \citep{vdomharness}, \texttt{improveLoop} already iterates. Keep $\mathrm{Obs}$ a first-class memory write after every cycle, including after a gated mount. Keep the trainer out-of-process. The cycle table of \S\ref{sec:torun} is filled from official $\tau^2$ JSON (\texttt{experiments/improve-live-0731.json}). Papers, blogs, GitHub, and other agents remain inputs, not the product.
 
 \section{Conclusion}
 
-A vdom agent watches itself and then edits its loop or dispatches a weight update that must not interrupt serving---and then watches itself again. That closed loop is the paper. Theory: hybrid kernel, typed noise, two clocks, spawn $\neq$ mount, $\mathrm{wait}$ as fixed point. The 0731 toys license the first $I_{\mathrm{loop}}$. The figure is $\mathrm{pass}^k(t)$ on the loop, not a one-shot score and not a one-shot pair.
+A vdom agent watches itself and then edits its loop or dispatches a weight update that must not interrupt serving---and then watches itself again. That closed loop is the paper. Theory: hybrid kernel, typed noise, two clocks, spawn $\neq$ mount, $\mathrm{wait}$ as fixed point. The 0731 toys license the first $I_{\mathrm{loop}}$. The figure is $\mathrm{pass}^k(t)$ on the loop ($1/3,0,1/3$ on airline $39,44,41$; $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$), not a one-shot score and not a one-shot pair.
 
 \subsection*{AI use statement}
-Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Cycle cells marked TO RUN are empty on purpose. We take responsibility for the final content.
+Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Reported $\mathrm{pass}^k(t)$ are copied from \texttt{experiments/improve-live-0731.json}. We take responsibility for the final content.
 \subsection*{Reproducibility statement}
-See paper/FRAMEWORK.md, paper/ANALYSIS.md, paper/ANALYSIS\_STATIC\_TAU2.md, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{improveLoop} iterates; \texttt{python -m tau2\_vdom --agent vdom}). $\tau^2$ cycle scores are not reported in this draft.
+See paper/FRAMEWORK.md, paper/ANALYSIS.md, paper/ANALYSIS\_STATIC\_TAU2.md, experiments/improve-live-0731.json, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{python -m tau2\_vdom.improve}). Live airline $\mathrm{pass}^1(t)=(1/3,0,1/3)$.
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 \end{document}
