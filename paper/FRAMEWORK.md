@@ -1,10 +1,12 @@
-# Typed-noise stochastic dynamics of LLM agents
+# Runtime self-improvement: typed-noise hybrid dynamics
 
-**Status.** Theoretical framework. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim.
+**Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. The contribution is the **framework + theory**. Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
 
-**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that reengineers its loop and/or dispatches async weight updates. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that reengineers its loop and/or dispatches async weight updates. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product. The shipped trainer is `FakeTrainer`: a protocol demo, not a measured \(I_{\mathrm{weight}}\) update.
 
-**Thesis.** The process is a **closed loop**: self-observe \(\to\) self-improve \(\to\) self-observe \(\to\cdots\). A vdom agent *observes itself*: it reads its own traces and writes a critique into memory. Then \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))\) is *iterated* on the fast clock. (1) *Loop:* emit a new AgentGraph; reconcile mutates the composition of \(K\). (2) *Weights:* dispatch an asynchronous trainer; serving keeps the old \(f_\theta\); a gated mount is a jump on the slow clock. After either intervention, \(\mathrm{Obs}\) reads the *new* traces and may fire again. \(\mathrm{wait}\) is a fixed point. Two clocks. The figure is \(\mathrm{pass}^k(t)\) versus cycle \(t\), not a one-shot before/after.
+**Motivation.** Benchmaxxing a static kernel on a public leaderboard does not transfer to real use or private datasets. After deployment the agent must change \(C\) or \(\theta\). \(\tau^2\) diagnoses that the loop ran; it is not a bench to max.
+
+**Thesis (locked).** An LLM agent is a **controlled hybrid Markov process**. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env). Self-observation \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\). Two licensed interventions: \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) and serving does not pause; \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap while serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology / policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists). \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. They are not SOTA, not a live \(p_{\mathrm{hit}}\) win, and not “we improve \(\tau^2\) airline.” The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point.
 
 ---
 
@@ -192,19 +194,19 @@ The *cascade exponent* is the local growth rate of \(\rho_n\) before coupling. A
 
 This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is that a vdom agent watches its own path measure and then edits either the loop or the weights.
 
-**Definition 6.1 (self-observation).** Let (\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}) together with first-passage proxies ((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})). The observation operator
+**Definition 6.1 (self-observation).** Let \(\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}\) together with first-passage proxies \((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})\) and completion \(\in\{\mathrm{hit},\mathrm{miss},\mathrm{hung},\mathrm{transfer},\mathrm{crash}\}\). The observation operator
 
 \[
-\mathrm{Obs}: \text{traces} \to \text{features in }\mathcal{M}
+\mathrm{Obs}: (\text{traces},\,\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}},\,\mathrm{completion}) \to \text{features in }\mathcal{M}
 \]
 
 writes a critique of the agent's *own* path measure into memory:
 
 \[
-M \leftarrow M \cup \{\texttt{obs}: \mathrm{Obs}(\mathrm{traces})\}.
+M \leftarrow M \cup \{\texttt{obs}: \mathrm{Obs}(\mathrm{traces},\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}},\mathrm{completion})\}.
 \]
 
-This is a memory write, typically Dirac given traces. It is *not* a fourth noise channel. Examples of features: "\(p_{\mathrm{hit}}=0\) on the fixture", "tool-thrash on `search`", "\(\tau_S\) exceeded budget", "near-tie rate high (numerical channel)". In vdom this is `traces` plus `runBenchmark.score`.
+This is a memory write, typically Dirac given traces. It is *not* a fourth noise channel. Hung, transfer-to-human, and crash are first-class completions: they stay in the task set and are not silent zeros. Examples of features: "\(p_{\mathrm{hit}}=0\) on the fixture", "tool-thrash on `search`", "\(\tau_S\) exceeded budget", "hung \(>8\) min", "transfer with zero required writes", "near-tie rate high (numerical channel)". In vdom this is `traces` plus `runBenchmark.score` plus episode completion.
 
 **Definition 6.2 (control from observation).**
 
@@ -230,14 +232,14 @@ The support of (P^{\mathrm{ctrl}}) is a small discrete set of interventions, not
 
 On (\{T_{\mathrm{adapt}}=n\}\) the gate (g(A_\sigma,\text{fixture})\in\{\mathrm{mount},\mathrm{reject}\}) is an empirical first-passage test (Definition 5.3). Mount is a jump (C\mapsto C'\) that changes (f_\theta\). Reject is the identity on (C\). The fast process is piecewise homogeneous: (K_C\) until a gated jump, then (K_{C'}\).
 
-**Definition 6.4 (dual intervention).** Write (I_{\mathrm{loop}}) and (I_{\mathrm{weight}}) for the two arms of (P^{\mathrm{ctrl}}) after (\mathrm{Obs}\):
+**Definition 6.4 (dual intervention).** Write \(I_{\mathrm{loop}}\) and \(I_{\mathrm{weight}}\) for the two *licensed* arms of \(P^{\mathrm{ctrl}}\) after \(\mathrm{Obs}\):
 
-1. **Loop.** (I_{\mathrm{loop}}: G\mapsto G'\) via scientist + reconcile. Changes *who calls whom* and which validators / temperatures / capabilities are mounted. Same (f_\theta\).
-2. **Weights.** (I_{\mathrm{weight}}\): spawn trainer; later, if (\hat p_{\mathrm{hit}}\ge\text{threshold}\), swap the model pointer. Jump in (f_\theta\). Topology may be unchanged.
+1. **Loop.** \(I_{\mathrm{loop}}: G\mapsto G'\) via scientist + reconcile. Changes *who calls whom* and which validators / temperatures / capabilities / policy checklists are mounted. Same \(f_\theta\). Serving does not pause. License: the miss is a topology or policy attractor.
+2. **Weights.** \(I_{\mathrm{weight}}\): spawn an asynchronous trainer on the slow clock; serving continues on the old \(f_\theta\); later, if \(\hat p_{\mathrm{hit}}\ge\text{threshold}\), gated \(\theta\) swap. Jump in \(f_\theta\). Topology may be unchanged. License: the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists). Until a real trainer exists, the runtime stub `FakeTrainer` is a protocol demo, not a measured update.
 
-Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoop`, `gateAdapter`, `gateCapability`, `unmountAdapterOnFailure`).
+Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoop`, `gateAdapter`, `gateCapability`, `unmountAdapterOnFailure`). Do not encode gold reservation IDs as the method; a policy node encodes rules.
 
-**Thesis (restated).** The process is a closed loop. Iterate \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))\) on the fast clock; \(I_{\mathrm{weight}}\) jumps on the slow clock; then observe again. Reconcile is the deterministic actuator. \(\mathrm{wait}\) is a fixed point. The measured object is the sequence \(\mathrm{pass}^k(t)\) along that loop.
+**Thesis (restated).** Framework + theory. \(X=(H,M,E,C)\), \(K_C\), three channels, \(\mathrm{Obs}\) (traces + first-passage + hung/transfer/crash), two licensed interventions on two clocks, arm choice as above. Experiments diagnose existence and arm choice. They do not found a \(\tau^2\) SOTA claim.
 
 ### Actuators available to (P^{\mathrm{ctrl}}) after Obs
 
@@ -307,7 +309,7 @@ While a trainer job is in flight, the fast process remains Markov with kernel (K
 
 ## §8 Open problems (for builders)
 
-1. When should (\mathrm{Obs}\) choose (I_{\mathrm{loop}}\) versus (I_{\mathrm{weight}}\) versus wait? A decision rule in terms of cascade exponent and (\hat p_{\mathrm{hit}}\), not a vibe.
+1. When should \(\mathrm{Obs}\) choose \(I_{\mathrm{loop}}\) versus \(I_{\mathrm{weight}}\) versus wait? Locked rule: topology / policy attractor \(\to I_{\mathrm{loop}}\); model does not complete the task at all \(\to I_{\mathrm{weight}}\). Remaining work is to measure a real slow-clock trainer (not `FakeTrainer`) under that rule.
 2. Measure the three channels on a real stack (vLLM / llama.cpp / OpenRouter) with replay.
 3. Estimate cascade exponents on vdom word-reverse vs a tool-using task.
 4. When does best-of-\(k\) *with an external grader* beat (\tau\downarrow\) for (p_{\mathrm{hit}}\) at fixed compute?
@@ -331,11 +333,17 @@ The typed kernel in `src/` is the contract these props should satisfy.
 
 ---
 
-## §10 Eval (the closed loop; toys license the first arm)
+## §10 Diagnostics (existence and arm choice; not a leaderboard)
 
-What we must show is the self-observe / self-improve loop: iterate \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs})\) on the fast clock, \(I_{\mathrm{weight}}\) jumps on the slow clock, then \(\mathrm{Obs}\) on the new traces. The figure is \(\mathrm{pass}^k(t)\) versus cycle \(t\), not a one-shot before/after. Protocol and TO RUN cycle table: `paper/ANALYSIS.md`. Implementation: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` (iterates) + `python -m tau2_vdom` (registers `--agent vdom`). Do not invent \(\mathrm{pass}^k(t)\).
+The ICLR contribution is the framework + theory. \(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose an arm**. Do not claim SOTA. Do not claim a live \(p_{\mathrm{hit}}\) win. Do not pivot to “we improve \(\tau^2\) airline.” Do not invent scores. Do not treat `FakeTrainer` as a measured \(I_{\mathrm{weight}}\) update.
 
-The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They **license** \(I_{\mathrm{loop}}\) first (retrieval 12/12, sequential toys 0/12, \(\tau\)-invariant loops). They are **not** the agent benchmark and not the runtime-improvement result. Counts: `paper/ANALYSIS.md`, `experiments/live-0731.json`.
+Honest live airline \(39/44/41\) (OpenRouter `deepseek/deepseek-v4-flash-0731`): one-shot \(p_{\mathrm{hit}}=0.333\); generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) (`experiments/improve-live-0731.json`); policy-checklist \(0.333\to 0\); task 39 still misses MSJ4OA (method encodes rules, never that gold id); 44 transfer / zero upgrades; 41 hang / error. Negative \(I_{\mathrm{loop}}\) licenses \(I_{\mathrm{weight}}\).
 
-The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). A live retail \(5\times 4\) one-shot already saturates at \(\mathrm{pass}^k=1.0\) (`experiments/tau2-retail-0731.json`) — a ceiling on an easy slice, not the lead number. Do not invent a larger \(\tau^2\) table.
+Mock closed loop \(0\to 0.5\to 1.0\) on official `update_task_1` / `impossible_task_1` is a **protocol unit test**, not an ICLR result.
+
+Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) (`experiments/tau2-retail-0731.json`) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point, not self-improvement.
+
+The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They **license** \(I_{\mathrm{loop}}\) when the miss is a topology attractor (retrieval 12/12, sequential toys 0/12, \(\tau\)-invariant loops). They are **not** the agent benchmark. Counts: `paper/ANALYSIS.md`, `experiments/live-0731.json`.
+
+The established *diagnostic* environment is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). Implementation: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` + `python -m tau2_vdom`. Do not invent a larger \(\tau^2\) table.
 
