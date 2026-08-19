@@ -1,6 +1,6 @@
 # Diagnostics: existence and arm choice
 
-**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Held-out airline is the eval: one policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. That is existence, not SOTA, not reliability, and not a \(\tau^2\) win. A 3-trial replication on the overfit slice is secondary (\(\mathrm{pass}^3\) stays \(0.333\)). The earlier \(0.333\to 0.667\) was \(n=1\) on that slice — do not lead with it. Remaining transfers license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`.
+**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Held-out airline is the eval: one policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. **Better than this one-shot control on a \(10\times 1\) slice. Not a reliability claim. The loop is real (\(\mathrm{Obs}\) fired, \(C\) mutated, serving did not pause). The *content* of \(C\) is not self-reflection — it is a static researcher-authored prior. Discovery slice = test-hacking risk. Held-out = weak generalization of that prior, including a regression on a task \(\mathrm{Obs}\) had marked `wait`.** That is existence, not SOTA, not reliability, and not a \(\tau^2\) win. A 3-trial replication on the overfit slice is secondary (\(\mathrm{pass}^3\) stays \(0.333\)). The earlier \(0.333\to 0.667\) was \(n=1\) on that slice — do not lead with it. Remaining transfers license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`. See §0c for the locked interpretation of \(0.7\to 0.9\).
 
 **What these notes record.** Existence of the loop and arm choice, not a one-shot before/after and not a leaderboard:
 
@@ -10,7 +10,7 @@
 
 Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. $\mathrm{pass}^k(t)$ along the loop is a diagnostic that an arm fired, not a leaderboard. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
 
-**Status.** Live airline diagnostics exist. **Held-out is the eval.** Official airline tasks $18,20,23,25,30,35,38,42,45,48$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$, max 2 rounds, user+judge pinned to the same model, one policy-checklist $I_{\mathrm{loop}}$ only. Official DB hash. Audit: no gold-ID or gold-action leak into the live prompt. Checklist was not written for these IDs. $p_{\mathrm{hit}}$ $0.7\to 0.9$: one-shot misses $23,35,48$ (hits the other 7); policy-checklist lifts those three and **regresses 18** ($1\to 0$). Completion: r0 finished 8 / transfer 2; r1 finished 9 / transfer 1; hung 0, error 0. JSON: `experiments/improve-live-0731-heldout.json` (source: vdom-harness `eval/tau2/improve-live-0731-heldout.json`). Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). Not SOTA, not a $\tau^2$ win.
+**Status.** Live airline diagnostics exist. **Held-out is the eval.** Official airline tasks $18,20,23,25,30,35,38,42,45,48$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$, max 2 rounds, user+judge pinned to the same model, one policy-checklist $I_{\mathrm{loop}}$ only. Official DB hash. Audit: no gold-ID or gold-action leak into the live prompt. Checklist was not written for these IDs. $p_{\mathrm{hit}}$ $0.7\to 0.9$: one-shot misses $23,35,48$ (hits the other 7); policy-checklist lifts those three and **regresses 18** ($1\to 0$). Completion: r0 finished 8 / transfer 2; r1 finished 9 / transfer 1; hung 0, error 0. JSON: `experiments/improve-live-0731-heldout.json` (source: vdom-harness `eval/tau2/improve-live-0731-heldout.json`). Better than this one-shot control on the $10\times 1$ slice. Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). The loop is real; the checklist text is a static prior (see §0c). Not SOTA, not a $\tau^2$ win.
 
 **Replication (overfit slice, secondary).** $39/41/44\times 3$ trials: $\mathrm{pass}^1$ $0.333\to 0.556$; $\mathrm{pass}^2$ $0.333\to 0.444$; $\mathrm{pass}^3$ $0.333\to 0.333$ (flat). Task 39: $0/3\to 2/3$; 44: $0/3\to 0/3$; 41: $3/3\to 3/3$. JSON: `experiments/improve-live-0731-replication.json`. The earlier $0.333\to 0.667$ was $n=1$ on this same slice — do not lead with $0.667$. Older licensing traces: generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; first policy draft $0.333\to 0$. Remaining transfers license $I_{\mathrm{weight}}$; `FakeTrainer` stays a protocol stub. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
 
@@ -65,7 +65,7 @@ Per-task (task IDs only; gold reservation IDs are not listed):
 - Policy-checklist lifts $23$, $35$, $48$.
 - Regression on $18$: $1\to 0$. The other six one-shot hits stay hits.
 
-Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). Benchmaxxing does not transfer: a mount fitted to $39/41/44$ also broke a held-out hit. Diagnostic that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved. Not SOTA, not a $\tau^2$ win. Remaining transfers license $I_{\mathrm{weight}}$. `FakeTrainer` stays a protocol stub. Cite the same numbers in `paper/iclr2027/main.tex`.
+Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). Benchmaxxing does not transfer: a mount fitted to $39/41/44$ also broke a held-out hit. The loop ran. The *content* of $C$ is a static prior — see §0c. Not SOTA, not a $\tau^2$ win. Remaining transfers license $I_{\mathrm{weight}}$. `FakeTrainer` stays a protocol stub. Cite the same numbers in `paper/iclr2027/main.tex`.
 
 ### 0a. Replication on the overfit slice (secondary; do not lead)
 
@@ -79,6 +79,54 @@ $39/41/44\times 3$ trials, same model, official DB hash. The method was written 
 $\mathrm{pass}^3$ is flat. Task 39: $0/3\to 2/3$; 44: $0/3\to 0/3$; 41: $3/3\to 3/3$. The earlier $0.333\to 0.667$ was $n=1$ on this same slice (`experiments/improve-live-0731-policy-v2.json`). Do not lead with $0.667$.
 
 Older generic ladder that licensed the typed arm (same slice, $k=1$): `experiments/improve-live-0731.json`. Generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; first policy draft $0.333\to 0$. Round-1 $0$ is a smaller denominator (task 41 skipped / hung). Not invented. Not the eval.
+
+---
+
+## 0c. Honest interpretation: better than this control; not self-reflection
+
+**The question.** Is \(0.7\to 0.9\) better than control? Is the harness change test-hacking, or real \(\mathrm{Obs}\)-driven self-improvement?
+
+Do not soften this. Do not claim SOTA.
+
+### What was measured
+
+- **Control** = same 0731, one-shot graph, same 10 held-out tasks.
+- **Treatment** = one \(I_{\mathrm{loop}}\) that mounts `policy-checklist`.
+- \(p_{\mathrm{hit}}\) \(0.7\to 0.9\) (\(7/10\to 9/10\)).
+- **Only this control was run.** No other baseline, no second held-out control, no \(k>1\) on this slice.
+- Reliability control on the overfit discovery slice \(39/41/44\times 3\): \(\mathrm{pass}^3\) is **flat at \(0.333\)**.
+
+### GraphDiff is a canned mount, not a synthesized graph
+
+GraphDiff: retain `solve`, mount `policy-checklist`.
+
+The checklist text was authored by us after reading \(39/44\) gold (insured economy / healthy-user / do not transfer until writes are done). \(\mathrm{Obs}\) only set a bit (`refusedCancel` / missed write) and selected that canned node. It did **not** synthesize a new graph from the held-out traces.
+
+That is the split: the *loop* (observe → pick an arm → mutate \(C\) → serve) is real. The *content* of \(C\) is a static prior we wrote on the discovery slice.
+
+### Per-task on the held-out slice
+
+Task IDs below are official airline ids. Reservation ids that appear are from the live traces (what the agent cancelled or refused), not gold ids injected into the prompt.
+
+- **Task 18.** One-shot DB \(=1\). \(\mathrm{Obs}\) said `wait`. The global \(I_{\mathrm{loop}}\) still changed \(C\) for the whole slice. Same five `update_reservation_flights` ids, DB \(=0\) (args). This is a **regression under a batch intervention** on a task the observer had already marked as a fixed point.
+- **Task 23.** One-shot: extra cancels + spam book + “too many reservations” + transfer, DB \(=0\). Policy: cancel `K1NW8N` + three books, DB \(=1\).
+- **Task 35.** One-shot: zero writes, DB \(=0\). Policy: one `book_reservation`, DB \(=1\). Closest to a completion lift.
+- **Task 48.** One-shot: cancelled ineligible `3RK2T9`, DB \(=0\). Policy: refused and transferred, DB \(=1\). That is **rubric-in-the-prompt** (basic economy / 24h / insurance gates we wrote), not a reflection generated from this episode.
+
+### Not an ID leak. Still a prior.
+
+No gold reservation ids in the live prompt. Held-out ids were not in the checklist. So this is **not** an ID leak. It is still a researcher-authored policy prior.
+
+### Verdict (locked)
+
+- **Better than the one-shot control on this \(10\times 1\) slice.**
+- **Not a reliability claim.** The only \(k=3\) control we ran (\(\mathrm{pass}^3\) on \(39/41/44\)) is flat. Held-out is one trial.
+- **The loop is real.** \(\mathrm{Obs}\) fired, \(C\) mutated, serving did not pause.
+- **The content of \(C\) is not self-reflection.** It is a static prior. \(\mathrm{Obs}\) selected a canned node; it did not write the checklist from the held-out traces.
+- **Discovery slice = test-hacking risk.** We read \(39/44\) gold and authored the rules. Fitting \(C\) to the slice you will later re-score is the usual way to fake a closed loop.
+- **Held-out = weak generalization of that prior**, including a regression on a task \(\mathrm{Obs}\) had marked `wait`.
+
+This is not \(\mathrm{Obs}\)-driven self-improvement of the *policy text*. It is \(\mathrm{Obs}\)-driven *selection* of a human-written prior, then a batch mount that helps some held-out misses and breaks a held-out hit. Call it existence of the loop. Do not call it self-reflection. Do not call it SOTA.
 
 ---
 
@@ -304,10 +352,10 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 
 Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
-**The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). Held-out airline is the eval: $0.7\to 0.9$ at $k=1$, including a regression. The 3-task $39/41/44$ slice is secondary ($\mathrm{pass}^3$ stays $0.333$; the earlier $0.333\to 0.667$ was $n=1$). We still do not invent a larger $\tau^2$ table and we do not claim SOTA or reliability.
+**The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0 and §0c. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). Held-out airline is the eval: $0.7\to 0.9$ at $k=1$, including a regression --- better than this one-shot control, not a reliability claim, not self-reflection of the checklist text. The 3-task $39/41/44$ slice is secondary ($\mathrm{pass}^3$ stays $0.333$; the earlier $0.333\to 0.667$ was $n=1$). We still do not invent a larger $\tau^2$ table and we do not claim SOTA or reliability.
 
 ---
 
 ## 11. One-paragraph claim (for the paper)
 
-The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Held-out airline (checklist not written for these IDs) on 0731: one policy-checklist $I_{\mathrm{loop}}$ moved $p_{\mathrm{hit}}$ $0.7\to 0.9$ at $k=1$, lifting $23,35,48$ and regressing $18$. Diagnostic that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved — not SOTA, not reliability, not a $\tau^2$ win (vdom-harness `python -m tau2_vdom.improve`). Replication on the overfit slice is secondary ($\mathrm{pass}^3$ stays $0.333$). Remaining transfers license $I_{\mathrm{weight}}$. On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
+The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Held-out airline (checklist not written for these IDs) on 0731: one policy-checklist $I_{\mathrm{loop}}$ moved $p_{\mathrm{hit}}$ $0.7\to 0.9$ at $k=1$, lifting $23,35,48$ and regressing $18$. Better than the one-shot control on this $10\times 1$ slice. Not a reliability claim. The loop is real ($\mathrm{Obs}$ fired, $C$ mutated, serving did not pause). The *content* of $C$ is not self-reflection: $\mathrm{Obs}$ selected a canned node we authored after reading $39/44$ gold. Discovery slice = test-hacking risk. Held-out = weak generalization of that prior, including a regression on a task $\mathrm{Obs}$ had marked `wait`. Not SOTA, not a $\tau^2$ win (vdom-harness `python -m tau2_vdom.improve`). Replication on the overfit slice is secondary ($\mathrm{pass}^3$ stays $0.333$). Remaining transfers license $I_{\mathrm{weight}}$. On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
