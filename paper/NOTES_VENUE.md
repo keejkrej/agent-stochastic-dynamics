@@ -6,7 +6,7 @@ PRL is not the first submission.
 
 ## Contribution (locked)
 
-The paper establishes a **runtime self-improvement framework with theoretical support**.
+The paper establishes a **runtime self-improvement framework with theoretical support**. Motivation: benchmaxxing a static kernel on a public leaderboard does not transfer to real use or private datasets. After deployment the agent must be able to change \(C\) or \(\theta\). \(\tau^2\) stays as a diagnostic that the loop ran, not a bench to max. This is not a refusal of benchmarks.
 
 - An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env).
 - \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\).

@@ -2,7 +2,7 @@
 
 Main paper repo for ICLR 2027: *Runtime Self-Improvement of LLM Agents as a Controlled Hybrid Markov Process*.
 
-The contribution is a **runtime self-improvement framework with theoretical support**, not SOTA on \(\tau^2\)-bench and not a live \(p_{\mathrm{hit}}\) win.
+The contribution is a **runtime self-improvement framework with theoretical support**. Motivation: a static kernel fitted to a public leaderboard does not transfer to real use or private datasets; after deployment the agent must be able to change \(C\) or \(\theta\). \(\tau^2\) and the 0731 traces are diagnostics that the loop ran, not a bench to max. Not SOTA, not a live \(p_{\mathrm{hit}}\) win, and not a refusal of benchmarks.
 
 An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env). Self-observation \(\mathrm{Obs}\) maps traces, first-passage proxies, and completion (hung / transfer / crash) into \(M\). Two licensed interventions: \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) and serving does not pause; \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap while serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology / policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists).
 
