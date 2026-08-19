@@ -1,0 +1,155 @@
+{
+  "benchmark": "tau2-bench",
+  "kind": "runtime-self-improvement",
+  "role": "eval",
+  "closedLoop": true,
+  "live": true,
+  "domain": "airline",
+  "taskIds": [
+    "18",
+    "20",
+    "23",
+    "25",
+    "30",
+    "35",
+    "38",
+    "42",
+    "45",
+    "48"
+  ],
+  "numTrials": 1,
+  "maxRounds": 2,
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "userLlm": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "nlAssertionJudge": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "provider": "openrouter",
+  "agent": "vdom",
+  "rewardBasis": "official tau2 DB hash (airline DB × COMMUNICATE)",
+  "officialDbHash": true,
+  "stopReason": "loop-exhausted",
+  "servingPaused": false,
+  "pHitSequence": [
+    0.7,
+    0.9
+  ],
+  "passHatK": {
+    "note": "k=1 only. Do not read 0.7→0.9 as pass^k reliability.",
+    "before": {
+      "1": 0.7
+    },
+    "after": {
+      "1": 0.9
+    }
+  },
+  "interventions": [
+    "I_loop"
+  ],
+  "rounds": [
+    {
+      "round": 0,
+      "technique": "one-shot",
+      "pHit": 0.7,
+      "taskPHit": {
+        "18": 1.0,
+        "20": 1.0,
+        "23": 0.0,
+        "25": 1.0,
+        "30": 1.0,
+        "35": 0.0,
+        "38": 1.0,
+        "42": 1.0,
+        "45": 1.0,
+        "48": 0.0
+      },
+      "oneShotMisses": ["23", "35", "48"],
+      "oneShotHits": ["18", "20", "25", "30", "38", "42", "45"],
+      "completion": {
+        "finished": 8,
+        "transfer": 2,
+        "hung": 0,
+        "error": 0
+      },
+      "intervention": null
+    },
+    {
+      "round": 1,
+      "technique": "policy-checklist",
+      "pHit": 0.9,
+      "taskPHit": {
+        "18": 0.0,
+        "20": 1.0,
+        "23": 1.0,
+        "25": 1.0,
+        "30": 1.0,
+        "35": 1.0,
+        "38": 1.0,
+        "42": 1.0,
+        "45": 1.0,
+        "48": 1.0
+      },
+      "lifts": ["23", "35", "48"],
+      "regression": {
+        "18": {
+          "from": 1.0,
+          "to": 0.0
+        }
+      },
+      "completion": {
+        "finished": 9,
+        "transfer": 1,
+        "hung": 0,
+        "error": 0
+      },
+      "intervention": "I_loop",
+      "mounted": "policy-checklist",
+      "note": "One policy-checklist mount only. Did not cycle self-refine/validator. Checklist was not written for these IDs."
+    }
+  ],
+  "perTask": {
+    "18": {
+      "pHit": [1.0, 0.0],
+      "note": "regression 1→0"
+    },
+    "20": {
+      "pHit": [1.0, 1.0]
+    },
+    "23": {
+      "pHit": [0.0, 1.0],
+      "note": "lift"
+    },
+    "25": {
+      "pHit": [1.0, 1.0]
+    },
+    "30": {
+      "pHit": [1.0, 1.0]
+    },
+    "35": {
+      "pHit": [0.0, 1.0],
+      "note": "lift"
+    },
+    "38": {
+      "pHit": [1.0, 1.0]
+    },
+    "42": {
+      "pHit": [1.0, 1.0]
+    },
+    "45": {
+      "pHit": [1.0, 1.0]
+    },
+    "48": {
+      "pHit": [0.0, 1.0],
+      "note": "lift"
+    }
+  },
+  "completionTotals": {
+    "round0": "finished 8 / transfer 2",
+    "round1": "finished 9 / transfer 1",
+    "hung": 0,
+    "error": 0
+  },
+  "promptAudit": "No gold reservation ID and no gold action leaked into the live prompt. The policy-checklist encodes rules, never task-specific identifiers. Held-out exists because the method overfit on 39/41/44.",
+  "honestNote": "THIS is the eval. Checklist was not written for these IDs. One I_loop (policy-checklist) moved p_hit 0.7→0.9 at k=1, including a regression on task 18 (1→0) while lifting 23, 35, 48. Diagnostic that Obs chose I_loop and C moved. Not SOTA, not reliability, not a tau2 win. Do not treat 0.7→0.9 as k>1 reliability (still 1 trial). Benchmaxxing on 39/41/44 does not transfer. Official DB hash. Not invented.",
+  "sourceFile": "eval/tau2/improve-live-0731-heldout.json",
+  "sourceRepo": "vdom-harness",
+  "command": "PYTHONPATH=python python3 -m tau2_vdom.improve --domain airline --task-ids 18 20 23 25 30 35 38 42 45 48 --num-trials 1 --max-rounds 2 --model deepseek/deepseek-v4-flash-0731"
+}

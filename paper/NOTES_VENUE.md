@@ -55,7 +55,7 @@ Do not invent \(\tau^2\) cycle scores. Do not add a larger airline table to “s
 
 ## Honest diagnostic numbers (cite; do not spin)
 
-Live airline 39/44/41, 0731: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\); first policy draft \(0.333\to 0\) (path that licensed the typed arm); then one policy-checklist \(I_{\mathrm{loop}}\) \(0.333\to 0.667\) (`experiments/improve-live-0731-policy-v2.json`). Diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. Not SOTA, not saturation. Remaining 44 miss is still \(I_{\mathrm{loop}}\)-shaped (policy-write after finish). Remaining transfers \(3/6\) license \(I_{\mathrm{weight}}\); `FakeTrainer` stays a protocol stub.
+Held-out airline (the eval; checklist not written for these IDs), 0731, \(k=1\): one policy-checklist \(I_{\mathrm{loop}}\) \(0.7\to 0.9\), including a regression on 18 (`experiments/improve-live-0731-heldout.json`). Diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. Not SOTA, not reliability, not a \(\tau^2\) win. Replication on the overfit slice \(39/41/44\times 3\): \(\mathrm{pass}^1\) \(0.333\to 0.556\), \(\mathrm{pass}^2\) \(0.333\to 0.444\), \(\mathrm{pass}^3\) \(0.333\to 0.333\) (`experiments/improve-live-0731-replication.json`). The earlier \(0.333\to 0.667\) was \(n=1\) on that slice — do not lead with it. Remaining transfers license \(I_{\mathrm{weight}}\); `FakeTrainer` stays a protocol stub.
 
 Mock `update_task_1` / `impossible_task_1`: \(0\to 0.5\to 1.0\). Protocol unit test, not an ICLR result.
 

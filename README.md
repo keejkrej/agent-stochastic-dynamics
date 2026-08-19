@@ -6,7 +6,7 @@ The contribution is a **runtime self-improvement framework with theoretical supp
 
 An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env). Self-observation \(\mathrm{Obs}\) maps traces, first-passage proxies, and completion (hung / transfer / crash) into \(M\). Two licensed interventions: \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) and serving does not pause; \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap while serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology / policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists).
 
-\(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose an arm**. Honest live airline 39/44/41: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) and a first policy draft \(0.333\to 0\) licensed a typed \(I_{\mathrm{loop}}\); one subsequent policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.333\to 0.667\). That is a diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved — not SOTA, not saturation. The remaining miss is still \(I_{\mathrm{loop}}\)-shaped; remaining transfers (\(3/6\)) license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) on `update_task_1` / `impossible_task_1` is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a `wait` fixed point. `FakeTrainer` is a protocol demo, not a measured weight update.
+\(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose an arm**. Held-out airline (the eval; checklist not written for these IDs): one policy-checklist \(I_{\mathrm{loop}}\) moved \(p_{\mathrm{hit}}\) \(0.7\to 0.9\) at \(k=1\), lifting 23/35/48 and **regressing 18** (\(1\to 0\)). That diagnoses that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved — not SOTA, not reliability, not a \(\tau^2\) win. A 3-trial replication on the overfit slice \(39/41/44\) is secondary (\(\mathrm{pass}^3\) stays \(0.333\)); the earlier \(0.333\to 0.667\) was \(n=1\) on that slice. Remaining transfers license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) on `update_task_1` / `impossible_task_1` is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a `wait` fixed point. `FakeTrainer` is a protocol demo, not a measured weight update.
 
 ## Two artifacts (submitted together)
 
@@ -22,7 +22,7 @@ Papers, blogs, GitHub, X, and other agents are **inputs** to that runtime, not t
 - ICLR 2027 draft: `paper/iclr2027/main.tex`
 - Venue track (ICLR 2027 first; contribution = framework+theory; experiments = existence/arm-choice): `paper/NOTES_VENUE.md`
 - Framework: `paper/FRAMEWORK.md`
-- Diagnostic counts (0731 toys; live airline \(I_{\mathrm{loop}}\) \(0.333\to 0.667\), not SOTA): `paper/ANALYSIS.md`
+- Diagnostic counts (0731 toys; held-out airline \(I_{\mathrm{loop}}\) \(0.7\to 0.9\) at \(k=1\), including a regression; not SOTA): `paper/ANALYSIS.md`
 - Static \(\tau^2\) retail \(5\times 4\) as \(\mathbb{P}_{C_0}\) (wait fixed point): `paper/ANALYSIS_STATIC_TAU2.md`
 - Math \(\leftrightarrow\) runtime map: `docs/VDOM_INTERFACE.md`
 
