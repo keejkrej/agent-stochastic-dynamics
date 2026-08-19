@@ -15,7 +15,7 @@ The paper establishes a **runtime self-improvement framework with theoretical su
 
 **Experiments are existence and arm-choice diagnostics**, not a \(\tau^2\) SOTA attempt and not “we improve \(\tau^2\) airline.”
 
-Do not claim SOTA. Do not claim a live \(p_{\mathrm{hit}}\) win. Do not invent scores. Do not encode gold reservation IDs as the method. Do not treat \(I_{\mathrm{weight}}\) as measured while only `FakeTrainer` exists — describe the protocol and the two clocks; label the stub as a protocol demo.
+Do not claim SOTA. Do not claim saturation. Do not invent scores. Do not encode gold reservation IDs as the method. Do not treat \(I_{\mathrm{weight}}\) as measured while only `FakeTrainer` exists — describe the protocol and the two clocks; label the stub as a protocol demo.
 
 Done when the abstract cannot be misread as a \(\tau^2\) SOTA paper.
 
@@ -55,7 +55,7 @@ Do not invent \(\tau^2\) cycle scores. Do not add a larger airline table to “s
 
 ## Honest diagnostic numbers (cite; do not spin)
 
-Live airline 39/44/41, 0731: one-shot \(p_{\mathrm{hit}}=0.333\); generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\); policy-checklist \(0.333\to 0\); 39 still misses MSJ4OA; 44 transfer / zero upgrades; 41 hang / error. Evidence for licensing \(I_{\mathrm{weight}}\), not a failed leaderboard attempt.
+Live airline 39/44/41, 0731: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\); first policy draft \(0.333\to 0\) (path that licensed the typed arm); then one policy-checklist \(I_{\mathrm{loop}}\) \(0.333\to 0.667\) (`experiments/improve-live-0731-policy-v2.json`). Diagnostic that \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved. Not SOTA, not saturation. Remaining 44 miss is still \(I_{\mathrm{loop}}\)-shaped (policy-write after finish). Remaining transfers \(3/6\) license \(I_{\mathrm{weight}}\); `FakeTrainer` stays a protocol stub.
 
 Mock `update_task_1` / `impossible_task_1`: \(0\to 0.5\to 1.0\). Protocol unit test, not an ICLR result.
 
