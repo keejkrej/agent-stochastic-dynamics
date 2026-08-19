@@ -1,0 +1,101 @@
+{
+  "benchmark": "tau2-bench",
+  "kind": "runtime-self-improvement",
+  "closedLoop": true,
+  "live": true,
+  "domain": "airline",
+  "taskIds": [
+    "39",
+    "44",
+    "41"
+  ],
+  "numTrials": 1,
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "userLlm": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "nlAssertionJudge": "openrouter/deepseek/deepseek-v4-flash-0731",
+  "provider": "openrouter",
+  "agent": "vdom",
+  "stopReason": "loop-exhausted",
+  "servingPaused": false,
+  "pHitSequence": [
+    0.3333333333333333,
+    0.6666666666666666
+  ],
+  "interventions": [
+    "I_loop"
+  ],
+  "rounds": [
+    {
+      "round": 0,
+      "technique": "one-shot",
+      "pHit": 0.3333333333333333,
+      "taskPHit": {
+        "39": 0.0,
+        "41": 1.0,
+        "44": 0.0
+      },
+      "completion": {
+        "finished": 1,
+        "transfer": 2,
+        "hung": 0,
+        "error": 0
+      },
+      "intervention": null
+    },
+    {
+      "round": 1,
+      "technique": "policy-checklist",
+      "pHit": 0.6666666666666666,
+      "taskPHit": {
+        "39": 1.0,
+        "41": 1.0,
+        "44": 0.0
+      },
+      "completion": {
+        "finished": 2,
+        "transfer": 1,
+        "hung": 0,
+        "error": 0
+      },
+      "intervention": "I_loop",
+      "mounted": "policy-checklist",
+      "note": "Did not cycle self-refine/validator. Merged vdom-harness PR #7."
+    }
+  ],
+  "perTask": {
+    "39": {
+      "pHit": [
+        0.0,
+        1.0
+      ],
+      "oneShot": "cancelled 8C8K4E+LU15PA, missed MSJ4OA, then transferred",
+      "policyChecklist": "three cancel_reservation including MSJ4OA; DB 1.0"
+    },
+    "44": {
+      "pHit": [
+        0.0,
+        0.0
+      ],
+      "oneShot": "did not cancel S61CZX (correct) but missed H8Q05L",
+      "policyChecklist": "wrongly cancelled S61CZX and missed KC18K6; still DB 0. Policy-write error after the episode finished; still I_loop-shaped."
+    },
+    "41": {
+      "pHit": [
+        1.0,
+        1.0
+      ],
+      "note": "hit both rounds"
+    }
+  },
+  "completionTotals": {
+    "transferred": "3/6",
+    "hung": 0,
+    "error": 0,
+    "valueError": false
+  },
+  "honestNote": "Diagnostic that Obs chose I_loop and C moved. Not a tau2 SOTA claim and not saturation. Older traces (generic I_loop 0.333→0→0.333; first policy draft 0.333→0) licensed this I_loop. Remaining 44 miss is a policy-write error after the episode finished (still I_loop-shaped). Remaining transfers 3/6 license I_weight; FakeTrainer stays a protocol stub. Not invented.",
+  "sourceFile": "eval/tau2/improve-live-0731-policy-v2.json",
+  "sourceRun": "eval/tau2/improve-airline-20260819T161900Z.json",
+  "finishedCEST": "2026-08-19 18:19 CEST",
+  "finishedAt": "2026-08-19T16:19:00Z"
+}

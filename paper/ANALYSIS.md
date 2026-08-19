@@ -1,6 +1,6 @@
 # Diagnostics: existence and arm choice
 
-**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Honest negative \(I_{\mathrm{loop}}\) licenses \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`.
+**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Older negative \(I_{\mathrm{loop}}\) traces licensed a typed policy-checklist; one live mount moved \(C\) (\(0.333\to 0.667\)). That is existence, not SOTA and not saturation. Remaining transfers license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`.
 
 **What these notes record.** Existence of the loop and arm choice, not a one-shot before/after and not a leaderboard:
 
@@ -10,7 +10,7 @@
 
 Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. $\mathrm{pass}^k(t)$ along the loop is a diagnostic that an arm fired, not a leaderboard. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
 
-**Status.** Live airline diagnostics exist: `experiments/improve-live-0731.json` (2026-08-19 14:11 CEST). Official airline tasks $39,44,41$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$. One-shot $p_{\mathrm{hit}}=0.333$; generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; policy-checklist $0.333\to 0$. Task 39 still misses MSJ4OA (method encodes rules, never gold IDs); 44 transfer / zero upgrades; 41 hang / error. $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$. That licenses $I_{\mathrm{weight}}$, not a failed leaderboard attempt. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
+**Status.** Live airline diagnostics exist. Official airline tasks $39,44,41$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$, user+judge pinned to the same model. Older traces licensed this $I_{\mathrm{loop}}$: generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$ (`experiments/improve-live-0731.json`, 2026-08-19 14:11 CEST); first policy draft $0.333\to 0$. Then one $I_{\mathrm{loop}}$ that mounted policy-checklist (merged vdom PR #7; did not cycle self-refine/validator) moved $p_{\mathrm{hit}}$ $0.333\to 0.667$ (`experiments/improve-live-0731-policy-v2.json`; source vdom-harness `eval/tau2/improve-live-0731-policy-v2.json`, run `improve-airline-20260819T161900Z.json`, finished 18:19 CEST 2026-08-19). `stopReason: loop-exhausted`. Task 39: $0\to 1$. Task 44: $0\to 0$ (policy-write error after the episode finished; still $I_{\mathrm{loop}}$-shaped). Task 41: $1\to 1$. Completions: round 0 = 1 finished / 2 transfer; round 1 = 2 finished / 1 transfer; $3/6$ transferred; 0 hung, 0 error, no `ValueError`. Diagnostic that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved. Not SOTA, not saturation. Remaining transfers license $I_{\mathrm{weight}}$; `FakeTrainer` stays a protocol stub. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
 
 - **Wait fixed point (not self-improvement).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. $\mathrm{Obs}$ should `wait`.
 - **Topology-attractor diagnostic (licenses $I_{\mathrm{loop}}$).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
@@ -26,7 +26,7 @@ Then it observes again. That iteration is the process the framework names.
 
 ---
 
-## 0. Negative $I_{\mathrm{loop}}$ on live airline (licenses $I_{\mathrm{weight}}$)
+## 0. Live airline: $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved (not SOTA)
 
 Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `improveLoop` already loops on `maxIters`; `python/tau2_vdom/` registers `--agent vdom`). Official $\tau^2$ owns domains, tools, user simulator, and `compute_metrics`. This repo does not reimplement retail.
 
@@ -54,7 +54,24 @@ PYTHONPATH=python python3 -m tau2_vdom \
 | $1$ | 39 miss, 44 miss, 41 hung $>8$ min (skipped) | $I_{\mathrm{loop}}$ (Self-Refine) | $0$ | $0$ |
 | $2$ | 39 miss, 41 hit, 44 miss | $I_{\mathrm{loop}}$ (validator) | $1/3$ | $1/3$ |
 
-This table is a **diagnostic** that the loop ran and that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$. Measured live on OpenRouter `deepseek/deepseek-v4-flash-0731`, airline tasks $39,44,41$, $k=1$, `stopReason: loop-exhausted`, `servingPaused: false`. JSON: `experiments/improve-live-0731.json` (copied from vdom-harness `eval/tau2/improve-live-0731.json`). Generic $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot ($0.333\to 0\to 0.333$). Policy-checklist on the same slice is $0.333\to 0$. Round-1 $0$ is a smaller denominator (task 41 skipped / hung). Not invented. These license $I_{\mathrm{weight}}$. Cite the same numbers in `paper/iclr2027/main.tex`.
+This table is the **older generic ladder** that licensed the typed $I_{\mathrm{loop}}$. Measured live on OpenRouter `deepseek/deepseek-v4-flash-0731`, airline tasks $39,44,41$, $k=1$, `stopReason: loop-exhausted`, `servingPaused: false`. JSON: `experiments/improve-live-0731.json` (copied from vdom-harness `eval/tau2/improve-live-0731.json`). Generic $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot ($0.333\to 0\to 0.333$). A first policy draft on the same slice is $0.333\to 0$. Round-1 $0$ is a smaller denominator (task 41 skipped / hung). Not invented.
+
+Then one $I_{\mathrm{loop}}$ that mounted policy-checklist (merged vdom PR #7). It did not cycle self-refine/validator. User simulator and NL-assertion judge pinned to the same model. JSON: `experiments/improve-live-0731-policy-v2.json` (source: vdom-harness `eval/tau2/improve-live-0731-policy-v2.json`, run `improve-airline-20260819T161900Z.json`, finished 18:19 CEST 2026-08-19).
+
+| Cycle $t$ | $\mathrm{Obs}(\mathrm{traces}_t)$ | $P^{\mathrm{ctrl}}$ | $\mathrm{pass}^1(t)$ | $\mathrm{pass}^k(t)$ |
+| --- | --- | --- | --- | --- |
+| $0$ | naive $C_0$; task $p_{\mathrm{hit}}$ 39=0, 41=1, 44=0 | — | $1/3$ | $1/3$ |
+| $1$ | 39 hit, 41 hit, 44 miss | $I_{\mathrm{loop}}$ (policy-checklist) | $2/3$ | $2/3$ |
+
+Completion (first-class): round 0 = 1 finished / 2 transfer / 0 hung / 0 error; round 1 = 2 finished / 1 transfer / 0 hung / 0 error; total $3/6$ transferred; no `ValueError`.
+
+Per-task (gold reservation IDs are reported as misses; the method encodes rules, never those IDs):
+
+- Task 39: $0\to 1$. One-shot cancelled 8C8K4E+LU15PA, missed MSJ4OA, then transferred. Policy-checklist issued three `cancel_reservation` including MSJ4OA (DB 1.0).
+- Task 44: $0\to 0$. One-shot did not cancel S61CZX (correct) but missed H8Q05L. Policy-checklist wrongly cancelled S61CZX and missed KC18K6. Still DB 0. Remaining miss is a policy-write error after the episode finished — still $I_{\mathrm{loop}}$-shaped.
+- Task 41: $1\to 1$ both rounds.
+
+This is a diagnostic that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved. It is not a $\tau^2$ SOTA claim and not saturation. Remaining transfers ($3/6$) license $I_{\mathrm{weight}}$: the model still does not complete many episodes. `FakeTrainer` stays a protocol stub; do not claim a measured weight update. Cite the same numbers in `paper/iclr2027/main.tex`.
 
 ---
 
@@ -280,10 +297,10 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 
 Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
-**The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). The live 3-task airline diagnostic is $0.333\to 0\to 0.333$ (generic) and $0.333\to 0$ (policy-checklist); we still do not invent a larger $\tau^2$ table.
+**The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). The live 3-task airline diagnostic is $0.333\to 0\to 0.333$ (generic), $0.333\to 0$ (first policy draft), then $0.333\to 0.667$ (typed policy-checklist $I_{\mathrm{loop}}$); we still do not invent a larger $\tau^2$ table and we do not claim SOTA.
 
 ---
 
 ## 11. One-paragraph claim (for the paper)
 
-The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Live airline $39,44,41$ on 0731: one-shot $0.333$; generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; policy-checklist $0.333\to 0$ — diagnostics that license $I_{\mathrm{weight}}$, not a failed $\tau^2$ attempt (vdom-harness `python -m tau2_vdom.improve`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
+The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Live airline $39,44,41$ on 0731: generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$ and a first policy draft $0.333\to 0$ licensed a typed $I_{\mathrm{loop}}$; one policy-checklist mount then moved $p_{\mathrm{hit}}$ $0.333\to 0.667$. Diagnostic that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ and $C$ moved — not SOTA, not saturation (vdom-harness `python -m tau2_vdom.improve`). Remaining 44 miss is still $I_{\mathrm{loop}}$-shaped; remaining transfers ($3/6$) license $I_{\mathrm{weight}}$. On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
