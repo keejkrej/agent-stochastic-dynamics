@@ -4,7 +4,7 @@
 
 **Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that reengineers its loop and/or dispatches async weight updates. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
 
-**Thesis.** A vdom agent can *observe itself*: it reads its own traces, first-passage times, and failures, and writes a critique of its own path measure into memory. From that observation it has a dual intervention. (1) *Loop:* emit a new AgentGraph; reconcile mutates the composition of the serving kernel \(K\). (2) *Weights:* dispatch an asynchronous trainer (HF job / LoRA). The serving loop keeps running on the old \(f_\theta\). When the artifact is ready *and* the eval gate passes, reconcile swaps the model pointer. Failed eval is no-switch / rollback. Two clocks: fast serving \(n\), slow adapter jumps. Determinism and learning are allocated, not assumed.
+**Thesis.** The process is a **closed loop**: self-observe \(\to\) self-improve \(\to\) self-observe \(\to\cdots\). A vdom agent *observes itself*: it reads its own traces and writes a critique into memory. Then \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))\) is *iterated* on the fast clock. (1) *Loop:* emit a new AgentGraph; reconcile mutates the composition of \(K\). (2) *Weights:* dispatch an asynchronous trainer; serving keeps the old \(f_\theta\); a gated mount is a jump on the slow clock. After either intervention, \(\mathrm{Obs}\) reads the *new* traces and may fire again. \(\mathrm{wait}\) is a fixed point. Two clocks. The figure is \(\mathrm{pass}^k(t)\) versus cycle \(t\), not a one-shot before/after.
 
 ---
 
@@ -237,7 +237,7 @@ On (\{T_{\mathrm{adapt}}=n\}\) the gate (g(A_\sigma,\text{fixture})\in\{\mathrm{
 
 Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoop`, `gateAdapter`, `gateCapability`, `unmountAdapterOnFailure`).
 
-**Thesis (restated).** A vdom agent observes itself. From (\mathrm{Obs}(\mathrm{traces})\) it either edits its own loop or dispatches an asynchronous weight update while it keeps serving. Reconcile is the deterministic actuator. Determinism is allocated on the fast clock; learning is gated on the slow clock.
+**Thesis (restated).** The process is a closed loop. Iterate \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))\) on the fast clock; \(I_{\mathrm{weight}}\) jumps on the slow clock; then observe again. Reconcile is the deterministic actuator. \(\mathrm{wait}\) is a fixed point. The measured object is the sequence \(\mathrm{pass}^k(t)\) along that loop.
 
 ### Actuators available to (P^{\mathrm{ctrl}}) after Obs
 
@@ -331,9 +331,11 @@ The typed kernel in `src/` is the contract these props should satisfy.
 
 ---
 
-## §10 Eval (toys diagnose; τ² scores)
+## §10 Eval (the closed loop; toys license the first arm)
 
-The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They are **not** the agent benchmark. Counts that found \(I_{\mathrm{loop}}\) first are in `paper/ANALYSIS.md` and `experiments/live-0731.json`.
+What we must show is the self-observe / self-improve loop: iterate \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs})\) on the fast clock, \(I_{\mathrm{weight}}\) jumps on the slow clock, then \(\mathrm{Obs}\) on the new traces. The figure is \(\mathrm{pass}^k(t)\) versus cycle \(t\), not a one-shot before/after. Protocol and TO RUN cycle table: `paper/ANALYSIS.md`. Implementation: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` (iterates) + `python -m tau2_vdom` (registers `--agent vdom`). Do not invent \(\mathrm{pass}^k(t)\).
 
-The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). This repo does not invent τ² scores; when that eval is run, cite the JSON.
+The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They **license** \(I_{\mathrm{loop}}\) first (retrieval 12/12, sequential toys 0/12, \(\tau\)-invariant loops). They are **not** the agent benchmark and not the runtime-improvement result. Counts: `paper/ANALYSIS.md`, `experiments/live-0731.json`.
+
+The established eval is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). A live retail \(5\times 4\) one-shot already saturates at \(\mathrm{pass}^k=1.0\) (`experiments/tau2-retail-0731.json`) — a ceiling on an easy slice, not the lead number. Do not invent a larger \(\tau^2\) table.
 

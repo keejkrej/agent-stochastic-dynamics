@@ -12,7 +12,7 @@ This repository is the **main paper repo**: theory, typed-noise kernel, experime
 
 ## Why ICLR first
 
-The object is a self-observing agent with a dual intervention (loop vs async weights) on a typed-noise hybrid kernel. That is representation / agent / test-time compute, not a four-page physics letter. ICLR takes 9-page theory-plus-small-experiments drafts. Reciprocal reviewing and the one-paper cap for authors without a listed venue paper apply; OpenReview profiles must exist before the abstract deadline.
+The object is the self-observe / self-improve *closed loop*: iterate \(P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))\) on the fast clock, with \(I_{\mathrm{weight}}\) jumps on the slow clock, then observe again. Measured as \(\mathrm{pass}^k(t)\) versus cycle \(t\), not a one-shot before/after. That is representation / agent / test-time compute, not a four-page physics letter. ICLR takes 9-page theory-plus-small-experiments drafts. Reciprocal reviewing and the one-paper cap for authors without a listed venue paper apply; OpenReview profiles must exist before the abstract deadline. Theory is first-class, not an appendix.
 
 ICML is the same intellectual home with a later deadline. Use it if the ICLR draft is not tight by mid-September (missing live-channel measurement, missing cascade on vdom-harness, or an intro that still reads as a kernel manifesto).
 
@@ -33,9 +33,10 @@ Until that figure is from a real stack (not only the toy kernel), do not submit 
 - When best-of-k with an *external* grader beats tau-down at fixed compute.
 - Obs decision rule: I_loop vs I_weight vs wait, in terms of p_hit and cascade.
 - Safety: scientist-emitted C as an untrusted intervention.
+- **Closed loop \(\mathrm{pass}^k(t)\) (the paper figure).** Unsaturated $\tau^2$ slice, iterate `improveLoop` + `tau2_vdom` (`--agent vdom`) on the same task ids. Cycle table is TO RUN. Not a one-shot before/after. Do not invent cycle scores.
 
 Live traces in this repo use deepseek/deepseek-v4-flash-0731 only.
 
 ## Established eval
 
-τ²-bench (https://github.com/sierra-research/tau2-bench). pass^k = first-passage under k repeats. Do not report toy p_hit as the agent score. Do not invent τ² numbers; run the suite and cite the JSON.
+τ²-bench (https://github.com/sierra-research/tau2-bench). pass^k = first-passage under k repeats. The figure is pass^k(t) on the self-observe / self-improve loop. Toy word-reverse is not the eval. The 5×4 retail one-shot pass^k=1.0 is a wait fixed point on an easy slice, not the loop. The 0731 toys license I_loop on cycle 0; they are not the loop. Do not invent τ² cycle scores; run vdom-harness and cite the JSON.

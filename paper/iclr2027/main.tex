@@ -1,12 +1,16 @@
 \documentclass{article}
 \usepackage{iclr2027_conference,times}
 \input{math_commands.tex}
+\usepackage{amsthm}
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{graphicx}
 \usepackage{booktabs}
 
-\title{Self-Observing LLM Agents: Dual Intervention on the Loop and on the Weights}
+\newtheorem{lemma}{Lemma}
+\newtheorem{definition}{Definition}
+
+\title{The Self-Observe / Self-Improve Loop}
 
 \author{Tianyi Cao \\
 Independent \thanks{Affiliation TODO.} \\
@@ -19,69 +23,107 @@ Independent \thanks{Affiliation TODO.} \\
 \maketitle
 
 \begin{abstract}
-A virtual-DOM (vdom) agent can observe itself: it reads its own traces, first-passage times, and failures, and writes a critique of its own path measure into memory. From that observation it has two interventions. It can emit a new AgentGraph, so a deterministic reconciler mutates the composition of the serving kernel ($I_{\mathrm{loop}}$); or it can dispatch an asynchronous trainer ($I_{\mathrm{weight}}$). The serving loop keeps running on the old logit map. When the artifact is ready and an eval gate passes, reconcile swaps the model pointer; failed eval is no-switch or rollback. We write this as a hybrid Markov process with two clocks---fast serving, slow adapter jumps---and three typed noise channels (sampling, numerical, environmental). A live diagnostic on one serving model shows the same $f_\theta$ hitting a retrieval fixture and sitting in temperature-invariant action attractors on sequential-tool fixtures: $\mathrm{Obs}$ should emit $I_{\mathrm{loop}}$ first. Those toys are not the benchmark. The established eval is $\tau^2$-bench, where $\mathrm{pass}^k$ is first-passage under $k$ repeats. The contribution is the self-observation operator and the dual intervention, not a generation SDE.
+The process is a closed loop: self-observe $\to$ self-improve $\to$ self-observe $\to\cdots$. A virtual-DOM (vdom) agent reads its own traces, writes a critique into memory ($\mathrm{Obs}$), and applies $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$. That kernel is iterated on the fast clock. $I_{\mathrm{loop}}$ mutates the AgentGraph, so a deterministic reconciler changes the composition of the serving kernel $K_C$. $I_{\mathrm{weight}}$ dispatches an asynchronous trainer; serving keeps the old $f_\theta$; a gated mount is a jump on the slow clock. After either intervention the agent serves again, $\mathrm{Obs}$ reads the \emph{new} traces, and $P^{\mathrm{ctrl}}$ may fire again. $\mathrm{wait}$ is a fixed point. We write this on the hybrid state $X=(H,M,E,C)$ with typed noise (sampling, numerical, environmental) and two clocks. The eval functional is $\mathrm{pass}^k$: first-passage under $k$ i.i.d.\ repeats. The figure is the loop---$\mathrm{pass}^k(t)$ versus cycle $t$---not a one-shot before/after and not a static one-shot score. A live diagnostic licenses $I_{\mathrm{loop}}$ first; a five-task retail slice already saturates at $\mathrm{pass}^k=1.0$ under technique \texttt{one-shot} (a ceiling, not the loop). Cycle scores are not invented.
 \end{abstract}
 
-\section{The key}
+\section{The claim}
 
-An LLM agent is usually described as a generator with tools bolted on, or as a latent diffusion, or as an MDP over memory operations. Those descriptions miss what a vdom agent actually does.
+The process is a \emph{closed loop}:
+\[
+\text{self-observe}\;\to\;\text{self-improve}\;\to\;\text{self-observe}\;\to\;\cdots
+\]
+A one-shot pair $(\mathrm{Obs},I)$ is one edge of that loop, not the object. A static $\mathrm{pass}^k=1.0$ on a one-shot graph is not the object. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, serving produces new traces; $\mathrm{Obs}$ reads them; $P^{\mathrm{ctrl}}$ may intervene again.
 
-The agent \emph{reads its own traces}. It sees actions, observations, channel tags, and a first-passage score on a fixture. It writes a critique of that path measure into structured memory. Call this operator $\mathrm{Obs}$. Then a control kernel, given $\mathrm{Obs}(\mathrm{traces})$, chooses one of a small set of interventions:
-
+An LLM agent is usually described as a generator with tools, or as a latent diffusion, or as an MDP over memory operations. Those descriptions miss the loop. The agent \emph{reads its own traces}. It writes a critique of its path measure into structured memory ($\mathrm{Obs}$). Control is the iteration
+\begin{equation}
+\label{eq:ctrl}
+C_{n+1}\;\sim\; P^{\mathrm{ctrl}}\big(\cdot\mid C_n,\,\mathrm{Obs}(\mathrm{traces}_n)\big)
+\end{equation}
+on the \textbf{fast clock}. The two arms that change the path measure are:
 \begin{enumerate}
-\item \textbf{Loop.} Emit a new AgentGraph $G'$. Reconcile is a deterministic map $(G,G')\mapsto$ mount / update / retain / unmount. The \emph{composition} of the serving kernel $K$ changes: critics, refiners, validators, capabilities. The logit map $f_\theta$ does not.
-\item \textbf{Weights.} Dispatch an asynchronous trainer (a Trainer port, an HF job, a LoRA run) on the same traces. Serving does not stop. When the artifact is ready, an eval gate estimates hit probability on a fixture---and, when wired, $\mathrm{pass}^k$ on $\tau^2$-bench. Only then may reconcile rebind \texttt{PhysicalNode.provider}. Failed eval: no switch. Later regression: unmount, which is rollback.
+\item \textbf{Loop.} Emit a new AgentGraph $G'$. Reconcile is a deterministic map $(G,G')\mapsto$ mount / update / retain / unmount. The \emph{composition} of $K$ changes: critics, refiners, validators. $f_\theta$ does not. Then serve; observe again.
+\item \textbf{Weights.} Dispatch an asynchronous trainer. Serving does not stop (old $f_\theta$). When the artifact is ready and an eval gate passes, reconcile rebinds \texttt{PhysicalNode.provider}: a jump on the \textbf{slow clock}. Failed eval: no switch. Later regression: unmount. Then serve; observe the new traces; $P^{\mathrm{ctrl}}$ may fire again.
 \end{enumerate}
-
-There are two clocks. The fast clock $n$ is the serving loop---sampling noise and environmental noise, $\theta$ frozen. The slow clock is the trainer. A gated mount is a jump $C\mapsto C'$ that changes $f_\theta$. This is not a diffusion in weight space.
-
-Topology is a value \citep{vdomharness}. A scientist that emits a graph is $I_{\mathrm{loop}}$. A trainer that returns an adapter is $I_{\mathrm{weight}}$. Self-observation is what licenses both. Determinism is allocated on the fast clock; learning is gated on the slow clock.
+$\mathrm{wait}$ is the identity on $C$: a fixed point of~\eqref{eq:ctrl}. Topology is a value \citep{vdomharness}. Determinism is allocated on the fast clock; learning is gated on the slow clock.
 
 \paragraph{Two artifacts.}
-The theory, the typed-noise kernel, the experiments, and this draft live in the \texttt{agent-stochastic-dynamics} repository. We submit with the paper an accompanying implementation \citep{vdomharness}: a self-observing agent that reengineers its loop and/or dispatches asynchronous weight updates. Papers, blogs, GitHub repositories, social posts, and other agents are inputs to that runtime, not the product.
+Theory, typed-noise kernel, experiments, and this draft live in \texttt{agent-stochastic-dynamics}. The accompanying runtime \citep{vdomharness} iterates \texttt{improveLoop} given $\mathrm{Obs}$. Papers, blogs, GitHub, and other agents are inputs to that runtime, not the product.
 
 \paragraph{What we are not claiming.}
-We are not claiming that Langevin dynamics applies to the loop, nor that the closed loop is an SDE on a latent manifold. Generation-SDE papers \citep{sde2408,sde2510,lgoc2605} model token generation. Memory-as-MDP papers \citep{slmv3,memcon,memento2,memp} enlarge memory actions. Reflexion and Self-Refine \citep{reflexion,selfrefine} are particular loop mutations without weight updates. The gap is the pair $(\mathrm{Obs},\{I_{\mathrm{loop}},I_{\mathrm{weight}}\})$ on a typed-noise hybrid kernel.
+Not Langevin on the loop, not an SDE on a latent manifold. Generation-SDE papers \citep{sde2408,sde2510,lgoc2605} model token generation. Memory-as-MDP papers \citep{slmv3,memcon,memento2,memp} enlarge memory actions. Reflexion and Self-Refine \citep{reflexion,selfrefine} are particular $I_{\mathrm{loop}}$ mutations, typically one pass, without weight updates and without iterating $\mathrm{Obs}$ after a slow-clock jump. The gap is the closed loop~\eqref{eq:ctrl} on a typed-noise hybrid kernel, with $I_{\mathrm{weight}}$ jumps off the fast clock.
 
 \section{Hybrid state and typed noise}
+\label{sec:hybrid}
 
-\textbf{Definition.} At serving step $n$,
+\begin{definition}[Hybrid state]
+At serving step $n$,
 \[
 X_n=(H_n,M_n,E_n,C_n)\in\mathcal{V}^*\times\mathcal{M}\times\mathcal{E}\times\mathcal{C},
 \]
-where $H$ is context, $M$ is structured memory (including $\mathrm{Obs}$ features), $E$ is the environment / tools, and $C$ is the AgentGraph plus decoding knobs and bound model / adapter ids. An optional embedding $z_n=\Pi(X_n)$ is a projection, never the state.
+where $H$ is context, $M$ is structured memory (including $\mathrm{Obs}$ critiques), $E$ is the environment / tools, and $C$ is the AgentGraph plus decoding knobs and bound model / adapter ids. An optional embedding $z_n=\Pi(X_n)$ is a projection, never the state.
+\end{definition}
 
 One serving step is a composition, not a diffusion:
 (i) $a_{n+1}\sim P^{\mathrm{gen}}_C(\cdot\mid H_n,M_n)$;
 (ii) $(E_{n+1},o_{n+1})\sim P^{\mathrm{env}}(\cdot\mid E_n,a_{n+1})$;
 (iii) $M_{n+1}\sim P^{\mathrm{mem}}_C(\cdot\mid M_n,H_n,a_{n+1},o_{n+1})$;
 (iv) $H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})$ (Dirac);
-(v) $C_{n+1}\sim P^{\mathrm{ctrl}}(\cdot\mid C_n,\mathrm{Obs}(\mathrm{traces}_n))$.
-Write $X_{n+1}\sim K_C(\cdot\mid X_n)$. Time is discrete and event-driven.
+(v) $C_{n+1}\sim P^{\mathrm{ctrl}}(\cdot\mid C_n,\mathrm{Obs}(\mathrm{traces}_n))$ --- \emph{iterated}, not a one-shot map.
+Write $X_{n+1}\sim K_C(\cdot\mid X_n)$. Time is discrete and event-driven. The pair $(X_n)$ is Markov on $\mathcal{X}$ because $C_n\subset X_n$.
 
 Generation factors as
 \[
 P^{\mathrm{gen}}(a\mid H,M,C)=\int P^{\mathrm{dec}}_C(a\mid \tilde\ell)\,P^{\mathrm{num}}(d\tilde\ell\mid f_\theta(H),C).
 \]
-Three channels, conditionally independent given $X_n$: sampling (designed; vanishes as $\tau\to 0$ with unique argmax), numerical (logit perturbation $\tilde\ell=f_\theta(H)+\varepsilon$, not white in time), environmental (tools, web, clocks; discrete, heavy-tailed). Numerical noise is a boundary layer on near-ties, not a diffusion coefficient (Lemma~\ref{lem:gap}).
+Three channels, conditionally independent given $X_n$:
+\begin{itemize}
+\item \textbf{Sampling} $\xi^{\mathrm{samp}}$: designed decoding RNG. Vanishes as $\tau\to 0$ with unique argmax.
+\item \textbf{Numerical} $\xi^{\mathrm{num}}$: logit perturbation $\tilde\ell=f_\theta(H)+\varepsilon$, not white in time. A boundary layer on near-ties, not a diffusion coefficient (Lemma~\ref{lem:gap}).
+\item \textbf{Environmental} $\xi^{\mathrm{env}}$: tools, web, clocks, other agents. Discrete, heavy-tailed.
+\end{itemize}
 
-\section{Self-observation and two clocks}
+\section{The self-observe / self-improve loop}
+\label{sec:obs}
 
-\textbf{Observation.} $\mathrm{Obs}$ maps traces and first-passage proxies to features in $M$. It is a statistic, not a noise source. In the accompanying runtime this is \texttt{traces} plus \texttt{runBenchmark.score} \citep{vdomharness}.
+\begin{definition}[Observation]
+$\mathrm{Obs}$ maps traces and first-passage proxies $(\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})$ to a critique in $M$:
+\[
+M \leftarrow M \cup \{\texttt{obs}: \mathrm{Obs}(\mathrm{traces})\}.
+\]
+It is a statistic, not a fourth noise channel. In the runtime: \texttt{traces} plus \texttt{runBenchmark.score} \citep{vdomharness}. After every intervention the same operator is applied to the \emph{new} traces.
+\end{definition}
 
-\textbf{Control support.} After $\mathrm{Obs}$, $P^{\mathrm{ctrl}}$ takes values in a finite set: graph mutation, spawn trainer, mount adapter, rollback, capability mount, commit, wait. Reconcile is deterministic. Spawn does not change $f_\theta$. Mount is allowed only if an artifact is ready \emph{and} $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture (equivalently $\mathrm{pass}^k$ on $\tau^2$ when that eval is the gate).
+\begin{definition}[Closed loop]
+\label{def:loop}
+Index improvement cycles by $t=0,1,2,\ldots$ (a subsample of the fast clock, or a wall-clock between evals). At cycle $t$ the agent serves under $C_t$, producing $\mathrm{traces}_t$ and $\mathrm{pass}^k(t)$. Then
+\[
+C_{t+1}\;\sim\; P^{\mathrm{ctrl}}\big(\cdot\mid C_t,\,\mathrm{Obs}(\mathrm{traces}_t)\big).
+\]
+Support: $I_{\mathrm{loop}}$, $I_{\mathrm{weight}}$ (spawn), gated mount, rollback, capability mount, commit, $\mathrm{wait}$. $I_{\mathrm{loop}}$ changes the composition of $K$ on the fast clock. $I_{\mathrm{weight}}$ spawn does not mutate $C$; a jump $f_\theta\mapsto f_{\theta'}$ occurs only at a gated mount on the slow clock. Then the agent serves under $C_{t+1}$, $\mathrm{Obs}$ reads $\mathrm{traces}_{t+1}$, and the kernel is applied again. The diagram is
+\[
+\mathrm{traces}_t \xrightarrow{\mathrm{Obs}} M \xrightarrow{P^{\mathrm{ctrl}}} C_{t+1} \xrightarrow{K_{C_{t+1}}} \mathrm{traces}_{t+1} \xrightarrow{\mathrm{Obs}} \cdots
+\]
+This is the figure. A single before/after is one arrow, not the loop.
+\end{definition}
 
-\textbf{Two clocks.} Fast clock $n$: serving under $K_C$. Slow clock: trainer jobs. Artifact arrival is an optional time $T_{\mathrm{adapt}}$. Serving does not block. The fast process is piecewise homogeneous.
+\begin{definition}[Two clocks]
+The \textbf{fast clock} $n\in\mathbb{N}$ is serving under $K_C$ and the iteration~\eqref{eq:ctrl}. Sampling and environmental noise live here. $\theta$ is frozen until a slow jump. The \textbf{slow clock} $\sigma\in\mathbb{N}$ is trainer jobs. Job $\sigma$ consumes traces and returns an artifact $A_\sigma$ at an optional time $T_{\mathrm{adapt}}$. Serving does not block. On $\{T_{\mathrm{adapt}}=n\}$ a gate $g(A_\sigma,\text{fixture})\in\{\mathrm{mount},\mathrm{reject}\}$ is an empirical first-passage test. After a mount, $\mathrm{Obs}$ is not done: it reads the post-jump traces and~\eqref{eq:ctrl} continues. The fast process is piecewise homogeneous between slow jumps.
+\end{definition}
 
-\textbf{First passage.} Success set $S$, failure $F$, $\tau_S=\inf\{n:X_n\in S\}$, $\tau_F=\inf\{n:X_n\in F\}$, $p_{\mathrm{hit}}=\mathbb{P}(\tau_S<\tau_F)$. The eval gate is this object. Under $k$ i.i.d.\ repeats,
+\begin{definition}[First passage and $\mathrm{pass}^k(t)$]
+\label{def:passk}
+Success set $S$, failure $F$, $\tau_S=\inf\{n:X_n\in S\}$, $\tau_F=\inf\{n:X_n\in F\}$, $p_{\mathrm{hit}}=\mathbb{P}(\tau_S<\tau_F)$. Under $k$ i.i.d.\ repeats,
 \[
 \mathrm{pass}^k=\mathbb{P}\big(\tau_S^{(i)}<\tau_F^{(i)}\ \forall i\le k\big)=(p_{\mathrm{hit}})^k
 \]
-if the repeats are independent. This is \emph{not} $\mathrm{pass}@k$ (best of $k$).
+if the repeats are independent. This is \emph{not} $\mathrm{pass}@k$. Along the closed loop write $\mathrm{pass}^k(t)$ at cycle $t$. The figure is the sequence $(\mathrm{pass}^k(t))_{t\ge 0}$, not a lone $\Delta^k$. One-step differences $\mathrm{pass}^k(t+1)-\mathrm{pass}^k(t)$ are edges of the loop. The $I_{\mathrm{weight}}$ mount gate reads $\mathrm{pass}^k$ (or fixture $\hat p_{\mathrm{hit}}$), not a single lucky rollout.
+\end{definition}
 
-\textbf{Cascade.} TV Lipschitz of any kernel is $\le 1$. Expansion after a one-bit memory split is visible in Hamming on prefixes. Autoregression plus memory write is typically expanding in that metric until a commit or a validator contracts.
+\paragraph{Cascade.}
+TV Lipschitz of any kernel is $\le 1$. Expansion after a one-bit memory split is visible in Hamming on prefixes. Autoregression plus memory write is typically expanding until a commit or a validator contracts.
 
 \section{Lemmas}
+\label{sec:lemmas}
 
 \begin{lemma}[Greedy collapse]
 If $\tau=0$, the argmax of $f_\theta(H)$ is unique a.s., numerical noise is absent, and env / memory / control are Dirac, then $K_C(\cdot\mid x)=\delta_{\Phi(x)}$. Residual randomness is environmental or a numerical tie---or a loop in the policy, not designed noise.
@@ -91,33 +133,83 @@ If $\tau=0$, the argmax of $f_\theta(H)$ is unique a.s., numerical noise is abse
 Let $\Delta\ell=\ell_{(1)}-\ell_{(2)}$ and $\tilde\ell=\ell+\varepsilon$. If $\Delta\ell>2\|\varepsilon\|_\infty$ then $\arg\max\tilde\ell=\arg\max\ell$. Hence $\mathbb{P}(\mathrm{flip})\le\mathbb{P}(\Delta\ell\le 2\|\varepsilon\|_\infty)$.
 \end{lemma}
 
-\begin{lemma}[Serving / trainer separation]
-Spawning a trainer does not mutate $C$. While the job runs, the serving process is Markov under the pre-job kernel. A jump in $f_\theta$ occurs only at a gated mount.
+\begin{lemma}[Spawn $\neq$ mount]\label{lem:spawn}
+Spawning a trainer does not mutate $C$. While the job runs, the serving process is Markov under the pre-job kernel $K_C$, and~\eqref{eq:ctrl} may still apply $I_{\mathrm{loop}}$ or $\mathrm{wait}$ on the fast clock. A jump in $f_\theta$ occurs only at a gated mount. After that jump, $\mathrm{Obs}$ is applied to the new traces. Reject and rollback are the identity (resp.\ the inverse) on the jump.
 \end{lemma}
 
 \begin{lemma}[Eval gate]
-Mounts occur iff $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture (or $\mathrm{pass}^k$ on $\tau^2$-bench when that is the gate). This is empirical first-passage, not a new objective.
+Mounts occur iff $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture (or $\mathrm{pass}^k$ on $\tau^2$-bench when that is the gate). This is empirical first-passage (Definition~\ref{def:passk}), not a new objective.
 \end{lemma}
 
-Proofs of the first two are elementary. The third is by construction of $I_{\mathrm{weight}}$. Further tradeoffs are in \texttt{paper/FRAMEWORK.md}. The 0731 counts and the $\mathrm{Obs}$ decision rule are in \texttt{paper/ANALYSIS.md}.
+\begin{lemma}[Wait is a fixed point]
+If $\mathrm{Obs}(\mathrm{traces}_t)$ selects $\mathrm{wait}$, then $C_{t+1}=C_t$ and the fast kernel is unchanged. The closed loop idles until traces change (new tasks, a slow-clock mount, or env noise) enough for $\mathrm{Obs}$ to leave $\mathrm{wait}$.
+\end{lemma}
 
-\section{Experiments}
+Proofs of the first two are elementary. Lemma~\ref{lem:spawn} is by construction of $I_{\mathrm{weight}}$. Further tradeoffs: \texttt{paper/FRAMEWORK.md}. The 0731 counts that \emph{license} $I_{\mathrm{loop}}$ first---not the closed-loop figure---are in \texttt{paper/ANALYSIS.md}.
 
-No private corpus. Trajectories are generated in-process. Live sampling, when keyed, uses OpenRouter and \texttt{deepseek/deepseek-v4-flash-0731} only.
+\section{The result: the loop, not a one-shot pair}
+\label{sec:result}
 
-\paragraph{What is being measured.}
-The toys below are a \emph{diagnostic} of $K_C$: same $f_\theta$, two temperatures, three action spaces, first-passage $(S,F,\tau_S,\tau_F,p_{\mathrm{hit}})$. They tell $\mathrm{Obs}$ which arm to raise. They are \emph{not} an agent benchmark and we do not report them as one. The established eval is $\tau^2$-bench \citep{tau2bench,taubench}; see \S\ref{sec:tau2}. We do not invent $\tau^2$ scores.
+No private corpus. Live sampling, when keyed, uses OpenRouter and \texttt{deepseek/deepseek-v4-flash-0731} only. We do not invent $\tau^2$ scores.
 
-\subsection{Toy kernel}
+The \emph{result} is the closed loop of Definition~\ref{def:loop}: $\mathrm{pass}^k(t)$ as $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs})$ iterates. Not a static $\mathrm{pass}^k$. Not a single before/after.
 
-A finite-action kernel implements word-reverse, a two-tool calculator, and retrieval-QA. Naive $f_\theta$ has the wrong mode. At $\tau=0$, greedy collapse gives $p_{\mathrm{hit}}=0$ on all three tasks ($N=200$). Raising $\tau$ leaks mass onto corrective actions: word-reverse $p_{\mathrm{hit}}=0.16, 0.735, 0.755$ at $\tau=0.5,1.0,1.5$ ($k=1$). Best-of-$k$ scored by the model's own logit lowers $p_{\mathrm{hit}}$. Selection is not temperature.
+\subsection{Protocol}
+\label{sec:protocol}
 
-Sampling entropy ($N=400$): $0$ bits at $\tau=0$; $1.79$ bits at $\tau=1.5$. Numerical flips occur only on $\{\Delta\ell\le 2\eta\}$ (off-tie flips $0/400$; $p_{\mathrm{flip}}=0.125$ at $\eta=1.5$, $0.32$ at $\eta=2.5$). Cascade after a one-bit memory split: mean Hamming $1.81\to 7.31$ over five steps; action-disagreement $0.905$ then $0.585$ ($\tau=0.8$, $N=200$). Self-observation on a failing trace chooses graph mutation. Spawn trainer leaves model id unchanged; mount is the $f_\theta$ jump.
+\begin{enumerate}
+\item \textbf{Start naive.} Mount a one-shot AgentGraph $C_0$ (\texttt{oneShotGraph} / \texttt{technique: one-shot}).
+\item \textbf{Cycle $t=0,1,\ldots,T$.} Serve on a $\tau^2$ slice that is \emph{not} already saturated. Record $\mathrm{pass}^k(t)$ from official \texttt{compute\_metrics}. Write $\mathrm{traces}_t$ into $M$.
+\item \textbf{$\mathrm{Obs}(\mathrm{traces}_t)$.} Repeat rate, timeout, zero progress, tool failures, knowledge-miss, $\hat p_{\mathrm{hit}}$.
+\item \textbf{$P^{\mathrm{ctrl}}$.} $I_{\mathrm{loop}}$ (\texttt{improveLoop} topology: critic / refine / validator) or $I_{\mathrm{weight}}$ (spawn; later gated mount). Or $\mathrm{wait}$ (fixed point; stop). Serving does not block on the trainer.
+\item \textbf{Do not stop after one intervention.} Serve under $C_{t+1}$. $\mathrm{Obs}$ reads the new traces. Repeat from (2).
+\end{enumerate}
 
-\subsection{Live serving channel (diagnostic)}
-\label{sec:live}
+Implementation: \url{https://github.com/keejkrej/vdom-harness}. \texttt{improveLoop} already iterates given $\mathrm{Obs}$ (\texttt{maxIters}). Official $\tau^2$ owns domains, tools, user simulator, and $\mathrm{pass}^k$. \texttt{python -m tau2\_vdom} registers \texttt{--agent vdom}:
 
-OpenRouter \texttt{deepseek/deepseek-v4-flash-0731} only (not the April preview). $N=12$ first-passage rollouts per task at each of $\tau=0$ and $\tau=0.7$ (72 traces; $\mathrm{max\_tokens}=48$). A one-bit memory coupling uses $N=6$ pairs per task per $\tau$ (72 further rollouts). Bundle: \texttt{experiments/live-0731.json} (144/144 complete). Counts below are read from that JSON; analysis in \texttt{paper/ANALYSIS.md}. Figures: \texttt{live-phit.svg}, \texttt{live-repeat.svg}, \texttt{live-loops.svg}.
+\begin{verbatim}
+# Cycle t. Unsaturated slice -- not the 5-task retail at pass^k = 1.0.
+PYTHONPATH=python python3 -m tau2_vdom \
+  --domain <airline|telecom|larger-retail> \
+  --task-ids <fixed ids> --num-trials k
+
+# Obs(traces_t) -> P^ctrl: improveLoop (topology = I_loop;
+# adapter spawn / gated mount = I_weight). Then cycle t+1
+# on the SAME task ids. Stop only on wait or t = T.
+\end{verbatim}
+
+Copy official \texttt{compute\_metrics} per cycle. Do not invent $\mathrm{pass}^k(t)$.
+
+\subsection{The figure: $\mathrm{pass}^k(t)$ on the loop}
+\label{sec:torun}
+
+\begin{center}
+\small
+\begin{tabular}{cllll}
+\toprule
+Cycle $t$ & $\mathrm{Obs}(\mathrm{traces}_t)$ & $P^{\mathrm{ctrl}}$ & $\mathrm{pass}^1(t)$ & $\mathrm{pass}^k(t)$ \\
+\midrule
+$0$ & --- (naive $C_0$) & --- & TO RUN & TO RUN \\
+$1$ & TO RUN & $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ or wait & TO RUN & TO RUN \\
+$2$ & TO RUN & \emph{again}, on new traces & TO RUN & TO RUN \\
+$\vdots$ & $\cdots$ & $\cdots$ & TO RUN & TO RUN \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This table \emph{is} the figure: the self-observe / self-improve loop. Cells are \textbf{TO RUN}. A filled $t=0$ and $t=1$ only would still be a one-shot pair; keep cycling until $\mathrm{wait}$ or $t=T$. Toy word-reverse is not this eval.
+
+\subsection{Ceiling on an easy slice (do not lead with this)}
+\label{sec:ceiling}
+
+A live official retail slice already exists: $N=5$ tasks $\times$ $4$ trials, \texttt{technique: one-shot}, OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, copied from vdom-harness \texttt{eval/tau2/retail-live-metrics.json} into \texttt{experiments/tau2-retail-0731.json}. Official \texttt{compute\_metrics}: $\mathrm{avgReward}=1.0$, $\mathrm{pass}^1=\mathrm{pass}^2=\mathrm{pass}^3=\mathrm{pass}^4=1.0$. Not invented. Small slice only. No larger $\tau^2$ table invented.
+
+That run is a static one-shot score. $\mathrm{Obs}$ selects $\mathrm{wait}$; the loop is already at a fixed point. It is a ceiling on an easy slice. It does not demonstrate the closed loop. The protocol needs a slice with $\mathrm{pass}^k(0)<1$ so~\eqref{eq:ctrl} has something to iterate.
+
+\subsection{Diagnostic that licenses $I_{\mathrm{loop}}$ first (not the loop)}
+\label{sec:diag}
+
+The 0731 toys diagnose $K_C$: same $f_\theta$, two temperatures, three action spaces, first-passage. They tell $\mathrm{Obs}$ which arm to raise \emph{on the first cycle}. They are not the closed-loop figure. Bundle: \texttt{experiments/live-0731.json} (144/144 complete; $N=12$ first-passage rollouts per task at $\tau\in\{0,0.7\}$). Counts from that JSON; analysis in \texttt{paper/ANALYSIS.md}.
 
 \begin{center}
 \small
@@ -135,60 +227,25 @@ retrieval-QA & $0.7$ & $12$ & $12/12$ & $1$ \\
 \end{tabular}
 \end{center}
 
-This $0/12$ is the founding diagnostic, not an embarrassment. A prior $N=2$ probe at $\tau=0.7$ hit all three toys; that was a fluke. $N=12$ is the measurement.
-
-\paragraph{Action histograms (first-passage).}
-Word-reverse: $72/72$ actions are \texttt{reverse\_entire} at each $\tau$ (one sequence: six repeats, timeout). Calculator: $72/72$ actions are \texttt{tool:add:3,5} at each $\tau$ (one sequence: six repeats, timeout). Retrieval-QA: at $\tau=0$, $12/12$ \texttt{search:iclr}; at $\tau=0.7$, $11/12$ search and $1/12$ \texttt{answer:2013}. Mean $\tau_S$ is over hits only; misses have no $\tau_S$. No $\tau_F$ on any of the 72 traces (they never \texttt{stop} into $F$).
-
-\paragraph{First action vs switch.}
-Word-reverse: first action already wrong, $12/12$ at both $\tau$. Calculator: first tool \emph{correct} on $24/24$ trials; switch to \texttt{mul(8,2)} on $0/24$. After step 1, $P^{\mathrm{mem}}$ has written $M=\{\texttt{tool:add}:8\}$ on $24/24$; the next prompt contains that write; generation ignores it. Retrieval: first action already in $S$ ($12/12$).
-
-\paragraph{Repeat rate.}
-Consecutive-pair repeat rate is $60/60=1$ on both failing toys at both temperatures (max run $6$, all-same $12/12$). Retrieval has no consecutive pair (hit in one step). Env observations are constant on the failures (\texttt{lautriv mod}; \texttt{8}).
-
-\paragraph{Channels.}
-$312/312$ first-passage steps tagged $\{\mathrm{samp},\mathrm{env}\}$. Numerical tags: $0/312$. Token flips: $0/312$. Live serving tags \texttt{samp} as the OpenRouter channel even at $\tau=0$; empirically the failing toys are Dirac-ish.
-
-\paragraph{Sampling is not the cause.}
-$\tau=0$ already fails; $\tau=0.7$ does not change $p_{\mathrm{hit}}$ on the failures and does not break the length-$6$ run. Env is deterministic. Numerical noise is off. By greedy collapse, residual randomness is a loop in the policy, not designed noise. The only visible sampling event is retrieval at $\tau=0.7$ ($1/12$ answers $2013$ instead of searching)---both actions lie in $S$. Temperature moves mass inside the success set, not out of the attractors.
-
-\paragraph{Metastable loops, therefore $I_{\mathrm{loop}}$.}
-$\{\texttt{reverse\_entire}\}$ and $\{\texttt{add(3,5)}\}$ are almost-absorbing sets of $K_C$ (Definition 5.5 of the companion note). $\mathrm{Obs}$ sees: repeat count, timeout, zero progress in $E$. That is $I_{\mathrm{loop}}$: a validator that forbids the last failed action, a Self-Refine topology, or a consume-$M$ critic. Calculator is a composition failure of the loop (first tool right, write of $8$ present, second tool the same add)---not missing weights. Retrieval hits from a correct search (snippet contains ``founded in 2013'') or from parametric $2013$. $I_{\mathrm{weight}}$ is not indicated. A failure of the form ``I don't know'' would be the weight arm.
-
-\paragraph{Coupling is a one-bit $I_{\mathrm{loop}}$ probe.}
-Same seed; memory bit = lesson / hint / retrieved fact. Word-reverse first-action disagreement $2/6$ at both $\tau$; the split copy hits $2/6$ (one-step \texttt{reverse\_each\_word}) while the base copy is $0/6$; mean action Hamming $2$. Calculator first actions stay coupled on \texttt{add}; at $\tau=0$, later-step Hamming $1.5$ and split $p_{\mathrm{hit}}=2/6$ (those two later emit \texttt{mul(8,2)}); at $\tau=0.7$, Hamming $0$ and split $0/6$. Retrieval stays a hit on both copies; at $\tau=0.7$ first-action disagreement $3/6$ (search vs direct answer).
-
-A loop-side memory write sometimes leaves the attractor. Temperature never does. The same bit does not always suffice (word-reverse still misses $4/6$ with the lesson; calculator hint misses $4/6$ at $\tau=0$ and $6/6$ at $\tau=0.7$). When loop mutation saturates, spawn the trainer.
-
-Absent a key, DeterministicProvider is used. We do not invent further numbers.
-
-\subsection{Established eval: $\tau^2$-bench}
-\label{sec:tau2}
-
-The toys do not test the agent. The eval is $\tau^2$-bench \citep{tau2bench}: a dual-control customer-service environment (agent \emph{and} user act with tools on a shared world; domains include airline, retail, telecom). Code: \url{https://github.com/sierra-research/tau2-bench}. Predecessor: $\tau$-bench \citep{taubench}.
-
-In this language $\mathrm{pass}^k$ \emph{is} first-passage under $k$ i.i.d.\ repeats: the probability that $\tau_S<\tau_F$ on every one of $k$ independent rollouts. It is not $\mathrm{pass}@k$. A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The $N=2$ fluke on the toys is exactly why the $I_{\mathrm{weight}}$ mount gate should read $\mathrm{pass}^k$, not a single lucky rollout.
-
-\textbf{We do not report $\tau^2$ scores in this draft.} No domain table, no $\mathrm{pass}^1$ / $\mathrm{pass}^k$, no comparison against other models. When that eval is run, the JSON is the citation. Until then the 0731 toys remain the diagnostic that founds $(\mathrm{Obs},\{I_{\mathrm{loop}},I_{\mathrm{weight}}\})$.
+\paragraph{Why the first $P^{\mathrm{ctrl}}$ should pick $I_{\mathrm{loop}}$.}
+Word-reverse and calculator sit in temperature-invariant action attractors (consecutive-repeat rate $60/60=1$). Calculator's first tool is already correct ($24/24$); $M$ contains the write of $8$; generation does not consume it. Retrieval hits ($12/12$, $\tau_S=1$). $\tau=0$ already fails; $\tau=0.7$ does not change $p_{\mathrm{hit}}$ on the failures. Numerical tags: $0/312$. By greedy collapse, residual randomness is a loop in the policy. A one-bit memory coupling sometimes leaves the attractor; temperature never does. Therefore cycle $t=0$ emits $I_{\mathrm{loop}}$. After that mutation, $\mathrm{Obs}$ must read the new traces: if the attractor remains, iterate $I_{\mathrm{loop}}$ or spawn $I_{\mathrm{weight}}$. That second look is the closed loop; the $0/12$ alone is not.
 
 \section{Discussion}
 
-The diagnostic buys a decision rule, not a leaderboard number.
+The contribution is the self-observe / self-improve loop: iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock, with $I_{\mathrm{weight}}$ jumps on the slow clock. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, $\mathrm{pass}^k(t)$, and the lemmas. Everything else is a license or a ceiling.
 
-Same $f_\theta$ succeeds at retrieval ($12/12$, $\tau_S=1$) and fails at sequential tools ($0/12$). That is not ``the model is bad.'' $\tau$ does not change $p_{\mathrm{hit}}$ on the failing toys. That is not sampling. Therefore $P^{\mathrm{ctrl}}$ should pick $I_{\mathrm{loop}}$ first: mutate the composition of $K$ (forbid last failed action; Self-Refine; consume the write of $8$). $I_{\mathrm{weight}}$ is the asynchronous backup if that mutation saturates; serving keeps the old $f_\theta$; mount only if the gate---fixture $p_{\mathrm{hit}}$ now, $\tau^2$ $\mathrm{pass}^k$ when wired---passes.
+The 0731 diagnostic buys the first arm: $I_{\mathrm{loop}}$ before $I_{\mathrm{weight}}$ on sequential-tool attractors. The five-task retail $1.0$ buys a warning: $\mathrm{wait}$ on a saturated slice is a fixed point, not a result.
 
-$\mathrm{Obs}$ on these traces emits: graph mutation on both failing toys; wait on retrieval; not spawn-trainer (no knowledge miss). That operator lives in \texttt{src/observe.ts}.
-
-In the accompanying runtime \citep{vdomharness}, \texttt{improveLoop} is already control given $\mathrm{Obs}$: topology, capability, or adapter, gated by eval; unmount is rollback. Make $\mathrm{Obs}$ a first-class memory write. Keep the trainer out-of-process. Slow-clock mounts stay gated. The toys diagnose the arm; $\tau^2$-bench is where the arm is scored. Papers, blogs, GitHub, and other agents remain inputs, not the product.
+In the accompanying runtime \citep{vdomharness}, \texttt{improveLoop} already iterates. Keep $\mathrm{Obs}$ a first-class memory write after every cycle, including after a gated mount. Keep the trainer out-of-process. Fill the cycle table of \S\ref{sec:torun} from official $\tau^2$ JSON. Papers, blogs, GitHub, and other agents remain inputs, not the product.
 
 \section{Conclusion}
 
-The paper exists because a vdom agent can watch itself and then edit its loop or dispatch a weight update that must not interrupt serving. The 0731 toys found the first choice---$I_{\mathrm{loop}}$---by exhibiting temperature-invariant attractors next to a hit on the same $f_\theta$. Typed noise is the language; self-observation plus dual intervention is the act. The score that will matter is $\mathrm{pass}^k$ on $\tau^2$-bench.
+A vdom agent watches itself and then edits its loop or dispatches a weight update that must not interrupt serving---and then watches itself again. That closed loop is the paper. Theory: hybrid kernel, typed noise, two clocks, spawn $\neq$ mount, $\mathrm{wait}$ as fixed point. The 0731 toys license the first $I_{\mathrm{loop}}$. The figure is $\mathrm{pass}^k(t)$ on the loop, not a one-shot score and not a one-shot pair.
 
 \subsection*{AI use statement}
-Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. We take responsibility for the final content.
+Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. Cycle cells marked TO RUN are empty on purpose. We take responsibility for the final content.
 \subsection*{Reproducibility statement}
-See paper/FRAMEWORK.md, paper/ANALYSIS.md, and experiments/live-0731.json in this repository, and the accompanying runtime \citep{vdomharness}. $\tau^2$-bench scores are not reported in this draft.
+See paper/FRAMEWORK.md, paper/ANALYSIS.md, experiments/live-0731.json, and experiments/tau2-retail-0731.json in this repository, and the accompanying runtime \citep{vdomharness} (\texttt{improveLoop} iterates; \texttt{python -m tau2\_vdom --agent vdom}). $\tau^2$ cycle scores are not reported in this draft.
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 \end{document}
