@@ -40,7 +40,8 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump |
 | rollback | unmountAdapterOnFailure; unmount = rollback |
 | eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the gate |
-| runtime Δ^k | same τ² task ids before vs after improveLoop; after-table is TO RUN |
+| closed loop | iterate improveLoop given Obs; pass^k(t) vs cycle t; TO RUN |
+| I_weight slow jump | spawn ≠ mount; after mount, Obs reads new traces |
 
 ## Files
 

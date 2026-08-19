@@ -4,15 +4,17 @@
  *   Obs: traces -> features in M
  *   P^ctrl(· | Obs) in {graph_mutation, spawn_trainer, mount_adapter, rollback, wait}
  *
- * Fast clock: serving kernel. Slow clock: async trainer; f_θ jumps only after a gated mount.
+ * Closed loop on the fast clock:
+ *   C_{n+1} ~ P^ctrl(· | C_n, Obs(traces_n))
+ * After I_loop or a gated I_weight mount, Obs reads the *new* traces and may fire again.
+ * I_weight jumps (mount) live on the slow clock. wait is a fixed point.
  *
  * Decision rule licensed by the 0731 diagnostic (paper/ANALYSIS.md):
  *   metastable action loop / first-right-then-repeat → I_loop
  *   knowledge miss ("I don't know") → I_weight (spawn trainer; spawn ≠ mount)
  *   p_hat = 1 → wait
- * Toys license the arm. They are not the paper result.
- * The result is runtime self-improvement: pass^k_before vs pass^k_after
- * after Obs → I_loop / I_weight on the same τ² tasks (TO RUN).
+ * Toys license the first arm. They are not the paper result.
+ * The figure is pass^k(t) on the loop (TO RUN), not a one-shot before/after.
  */
 import type { Control, StepTrace } from "./types.js";
 

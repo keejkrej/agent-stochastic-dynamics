@@ -1,11 +1,17 @@
-# Self-improvement at runtime: $\mathrm{Obs}\to I_{\mathrm{loop}}/I_{\mathrm{weight}}$, then $\mathrm{pass}^k$ delta
+# The self-observe / self-improve loop
 
-**What we must show.** Improvement over time in *one run*: naive graph → tasks that fail → $\mathrm{Obs}$ → $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ → same tasks again. The figure is $\mathrm{pass}^k_{\mathrm{before}}$ vs $\mathrm{pass}^k_{\mathrm{after}}$. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a leaderboard number without that pair is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class, not an appendix.
+**What we must show.** A *closed loop*, not a one-shot before/after:
 
-**Status.** After-column on $\tau^2$ is **TO RUN**. Do not invent it. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` + `python -m tau2_vdom` (registers `--agent vdom`). Existing numbers below are real and are *not* that figure:
+\[
+\text{self-observe}\;\to\;\text{self-improve}\;\to\;\text{self-observe}\;\to\;\cdots
+\]
 
-- **Ceiling (easy slice, do not lead).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. Static agent score. Saturated. Cannot demonstrate self-improvement.
-- **Diagnostic (licenses $I_{\mathrm{loop}}$ first, not the result).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Tells $\mathrm{Obs}$ which arm to raise. Toy word-reverse is not the eval.
+Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
+
+**Status.** Cycle scores $\mathrm{pass}^k(t)$ on $\tau^2$ are **TO RUN**. Do not invent them. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` (already iterates) + `python -m tau2_vdom` (registers `--agent vdom`). Existing numbers below are real and are *not* that figure:
+
+- **Ceiling (easy slice, do not lead).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. Static score. $\mathrm{Obs}$ should `wait`. Not the loop.
+- **Diagnostic (licenses $I_{\mathrm{loop}}$ on cycle $t=0$, not the loop).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
 
 No number below is invented.
 
@@ -14,43 +20,40 @@ No number below is invented.
 - $I_{\mathrm{loop}}$: mutate the AgentGraph (composition of $K$) — critics, refine, validators;
 - $I_{\mathrm{weight}}$: dispatch an async trainer; serving keeps old $f_\theta$; mount only if the eval gate passes.
 
-Self-improvement at runtime is the first-passage delta after that choice, on a fixed task set.
+Then it observes again. That iteration *is* the process.
 
 ---
 
-## 0. The result (protocol + TO RUN)
+## 0. The result (closed loop + TO RUN)
 
-Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `improveLoop`; `python/tau2_vdom/` registers the official factory as `--agent vdom`). Official $\tau^2$ owns domains, tools, user simulator, and `compute_metrics`. This repo does not reimplement retail.
+Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `improveLoop` already loops on `maxIters`; `python/tau2_vdom/` registers `--agent vdom`). Official $\tau^2$ owns domains, tools, user simulator, and `compute_metrics`. This repo does not reimplement retail.
 
-1. Start with a naive graph (`oneShotGraph` / `--technique one-shot`).
-2. Run on a domain slice that is **not** already saturated (not the 5-task retail that hits $1.0$). Candidates: airline, telecom, or a larger retail set. Record $\mathrm{pass}^k_{\mathrm{before}}$.
-3. $\mathrm{Obs}$ fires on traces (repeat rate, timeout, zero progress, tool failures, knowledge miss).
-4. Either $I_{\mathrm{loop}}$ (reconcile critic / refine / validator) or $I_{\mathrm{weight}}$ (spawn trainer; later mount if gate passes). Serving does not stop.
-5. Re-run the **same** task ids. Record $\mathrm{pass}^k_{\mathrm{after}}$. $\Delta^k$ is the figure.
+1. Start with a naive graph (`oneShotGraph` / `--technique one-shot`) as $C_0$.
+2. **Cycle** $t=0,1,\ldots,T$ on a domain slice that is **not** already saturated (not the 5-task retail that hits $1.0$). Same task ids every cycle. Record $\mathrm{pass}^k(t)$.
+3. $\mathrm{Obs}(\mathrm{traces}_t)$: repeat rate, timeout, zero progress, tool failures, knowledge miss.
+4. $P^{\mathrm{ctrl}}$: $I_{\mathrm{loop}}$ (critic / refine / validator) or $I_{\mathrm{weight}}$ (spawn; later mount if gate passes) or `wait`. Serving does not stop.
+5. **Do not stop after one intervention.** Serve under $C_{t+1}$. $\mathrm{Obs}$ reads the new traces. Repeat from (2) until `wait` or $t=T$.
 
 ```
-# Before. Unsaturated slice only.
+# Cycle t. Fixed task ids. Unsaturated slice only.
 PYTHONPATH=python python3 -m tau2_vdom \
   --domain <airline|telecom|larger-retail> \
-  --num-tasks N --num-trials k --technique one-shot
+  --task-ids <fixed ids> --num-trials k
 
-# Obs -> improveLoop (topology = I_loop; adapter = I_weight, gated).
-
-# After. Same task ids, same k.
-PYTHONPATH=python python3 -m tau2_vdom \
-  --domain <same> --task-ids <same ids> --num-trials k
+# Obs(traces_t) -> improveLoop (topology = I_loop; adapter = I_weight, gated).
+# Then cycle t+1 on the SAME task ids. Stop only on wait or t = T.
 ```
 
-`python -m tau2_vdom` registers `--agent vdom`. A stock `tau2 run --agent vdom` works after `register()`. Copy official `compute_metrics`. Do not invent the after column.
+`python -m tau2_vdom` registers `--agent vdom`. Copy official `compute_metrics` **per cycle**. Do not invent $\mathrm{pass}^k(t)$. A filled $t=0$ and $t=1$ only is still a one-shot pair; keep cycling.
 
-| Phase | Graph / $C$ | Slice | $\mathrm{pass}^1$ | $\mathrm{pass}^k$ | Arm |
-| --- | --- | --- | --- | --- | --- |
-| before | one-shot $G_0$ | unsaturated $\tau^2$ | **TO RUN** | **TO RUN** | — |
-| $\mathrm{Obs}$ | critique in $M$ | same traces | — | — | $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ |
-| after | $G_1$ or gated $C'$ | *same* tasks | **TO RUN** | **TO RUN** | — |
-| $\Delta^k$ | — | — | **TO RUN** | **TO RUN** | **the figure** |
+| Cycle $t$ | $\mathrm{Obs}(\mathrm{traces}_t)$ | $P^{\mathrm{ctrl}}$ | $\mathrm{pass}^1(t)$ | $\mathrm{pass}^k(t)$ |
+| --- | --- | --- | --- | --- |
+| $0$ | — (naive $C_0$) | — | **TO RUN** | **TO RUN** |
+| $1$ | TO RUN | $I_{\mathrm{loop}}$ or $I_{\mathrm{weight}}$ or wait | **TO RUN** | **TO RUN** |
+| $2$ | TO RUN | *again*, on new traces | **TO RUN** | **TO RUN** |
+| $\vdots$ | $\cdots$ | $\cdots$ | **TO RUN** | **TO RUN** |
 
-When the JSON exists, cite it here and in `paper/iclr2027/main.tex`. Until then the right-hand cells stay empty.
+This table *is* the figure. When the JSON exists, cite it here and in `paper/iclr2027/main.tex`.
 
 ---
 
@@ -58,13 +61,13 @@ When the JSON exists, cite it here and in `paper/iclr2027/main.tex`. Until then 
 
 Copied from vdom-harness `eval/tau2/retail-live-metrics.json` as `experiments/tau2-retail-0731.json`. Official tau2 `compute_metrics` for the vdom agent on OpenRouter `deepseek/deepseek-v4-flash-0731`, $N=5$ tasks $\times$ $4$ trials, `technique: one-shot`: $\mathrm{avgReward}=1.0$, $\mathrm{pass}^1=\mathrm{pass}^2=\mathrm{pass}^3=\mathrm{pass}^4=1.0$. Not invented. Small slice only. No comparison table. No larger $\tau^2$ table invented.
 
-This is a *static* one-shot score. $\mathrm{Obs}$ should `wait`. It is a ceiling on an easy slice. It does not demonstrate self-improvement. The protocol in §0 needs $\mathrm{pass}^k_{\mathrm{before}}<1$.
+This is a *static* one-shot score. $\mathrm{Obs}$ should `wait` — a fixed point of the loop, not a demonstration of the loop. The protocol in §0 needs $\mathrm{pass}^k(0)<1$.
 
 ---
 
 ## 1. Diagnostic (0731 toys): what was measured
 
-These three fixtures (word-reverse, calculator, retrieval-QA) are **not** the paper’s benchmark. They are a typed-noise diagnostic: same $f_\theta$, two temperatures, three action spaces, first-passage $(S,F,\tau_S,\tau_F,p_{\mathrm{hit}})$. The claim they support is *which intervention $\mathrm{Obs}$ should spawn first*, not “SOTA on word-reverse,” and not $\Delta^k$ on $\tau^2$.
+These three fixtures (word-reverse, calculator, retrieval-QA) are **not** the paper’s benchmark. They are a typed-noise diagnostic: same $f_\theta$, two temperatures, three action spaces, first-passage $(S,F,\tau_S,\tau_F,p_{\mathrm{hit}})$. The claim they support is *which intervention $\mathrm{Obs}$ should spawn on cycle $t=0$*, not “SOTA on word-reverse,” and not the closed loop $\mathrm{pass}^k(t)$.
 
 | Field | Value |
 | --- | --- |
@@ -252,7 +255,7 @@ Three facts, all from the same $f_\theta$:
 2. **Not sampling.** $\tau=0$ is already Dirac-ish and already fails; $\tau=0.7$ does not change $p_{\mathrm{hit}}$ on the failures. Greedy collapse: residual randomness is a policy loop (env is deterministic; `num` is off).
 3. **Therefore $P^{\mathrm{ctrl}}$ picks $I_{\mathrm{loop}}$ first.** $\mathrm{Obs}$ sees repeat count, timeout, zero progress. A validator / refine topology / consume-$M$ rule is a graph mutation. $I_{\mathrm{weight}}$ is the async backup if that mutation saturates (coupling: the one-bit lesson/hint is not enough on every seed). Mount stays gated (spawn $\neq$ mount).
 
-The $N=2$ probe that hit everything was a fluke. $N=12$ is the measurement. The 0/12 *licenses* the first arm. It is not $\Delta^k$ on $\tau^2$.
+The $N=2$ probe that hit everything was a fluke. $N=12$ is the measurement. The 0/12 *licenses* the first arm. After that $I_{\mathrm{loop}}$, $\mathrm{Obs}$ must read the new traces — that second look is the closed loop. The 0/12 alone is not $\mathrm{pass}^k(t)$.
 
 ---
 
@@ -274,10 +277,10 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 
 Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
-**The paper result is the delta**, not a static $\mathrm{pass}^k$. See §0. The 5×4 retail $1.0$ is a ceiling (§0b). We still do not invent a larger $\tau^2$ table.
+**The paper result is the closed loop** $\mathrm{pass}^k(t)$, not a static $\mathrm{pass}^k$ and not a one-shot before/after. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). We still do not invent a larger $\tau^2$ table.
 
 ---
 
 ## 11. One-paragraph claim (for the paper)
 
-A vdom agent improves itself at runtime: it observes its own traces and then either mutates the composition of $K$ ($I_{\mathrm{loop}}$) or dispatches an async trainer that must not interrupt serving ($I_{\mathrm{weight}}$). The figure is $\mathrm{pass}^k_{\mathrm{before}}$ vs $\mathrm{pass}^k_{\mathrm{after}}$ on the same $\tau^2$ tasks after that pair fires. After scores are TO RUN (vdom-harness `improveLoop` + `tau2_vdom` / `--agent vdom`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That diagnostic licenses $I_{\mathrm{loop}}$ first; it is not the runtime-improvement result. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — a ceiling on an easy slice, not the lead number. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, and spawn $\neq$ mount.
+The process is a closed loop: self-observe → self-improve → self-observe → ⋯. Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock; $I_{\mathrm{weight}}$ jumps on the slow clock; then $\mathrm{Obs}$ reads the new traces. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$ (TO RUN; vdom-harness `improveLoop` + `tau2_vdom` / `--agent vdom`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That diagnostic licenses $I_{\mathrm{loop}}$ on cycle $t=0$; it is not the loop. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a ceiling, not the lead number. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, and spawn $\neq$ mount.
