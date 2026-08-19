@@ -6,11 +6,13 @@
  *
  * Fast clock: serving kernel. Slow clock: async trainer; f_θ jumps only after a gated mount.
  *
- * Decision rule founded by the 0731 diagnostic (paper/ANALYSIS.md):
+ * Decision rule licensed by the 0731 diagnostic (paper/ANALYSIS.md):
  *   metastable action loop / first-right-then-repeat → I_loop
- *   knowledge miss ("I don't know") → I_weight (spawn trainer)
+ *   knowledge miss ("I don't know") → I_weight (spawn trainer; spawn ≠ mount)
  *   p_hat = 1 → wait
- * Toys diagnose the arm. The established eval is τ²-bench pass^k (not reported here).
+ * Toys license the arm. They are not the paper result.
+ * The result is runtime self-improvement: pass^k_before vs pass^k_after
+ * after Obs → I_loop / I_weight on the same τ² tasks (TO RUN).
  */
 import type { Control, StepTrace } from "./types.js";
 

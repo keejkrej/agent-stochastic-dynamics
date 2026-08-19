@@ -36,10 +36,11 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | Arm | vdom |
 | --- | --- |
 | I_loop | scientist emits AgentGraph; reconcile mutates composition of K |
-| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process |
+| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process; does not change f_θ |
 | I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump |
 | rollback | unmountAdapterOnFailure; unmount = rollback |
-| eval gate | runBenchmark score = empirical p_hit |
+| eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the gate |
+| runtime Δ^k | same τ² task ids before vs after improveLoop; after-table is TO RUN |
 
 ## Files
 
