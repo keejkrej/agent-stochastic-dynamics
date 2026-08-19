@@ -1,6 +1,6 @@
 # Map X, K, C onto vdom-harness
 
-This repo (`agent-stochastic-dynamics`) is the main ICLR 2027 paper repo: theory, kernel, experiments, draft.
+This repo (`agent-stochastic-dynamics`) is the main ICLR 2027 paper repo: **framework + theory**, typed-noise kernel, existence / arm-choice diagnostics, draft. Not a \(\tau^2\) score paper.
 
 Accompanying implementation (submitted with the paper, not a side project, not related-work-only): https://github.com/keejkrej/vdom-harness
 
@@ -16,7 +16,7 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | M | memoryStore in src/runtime.ts; Trace[] on PhysicalNode |
 | E | tools / capability runners; simulated or live |
 | C | AgentGraph + node props (model, capabilities, status, adapterRef) |
-| Obs(traces) | traces + runBenchmark.score; should become a first-class memory write |
+| Obs(traces, first-passage, completion) | traces + runBenchmark.score + hung / transfer / crash; first-class memory write |
 | z = Pi(X) | optional embedding; not the state |
 
 ## Kernel pieces
@@ -31,17 +31,19 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | P^ctrl | scientist.ts evolveOnce; improve.ts improveLoop |
 | reconcile | src/reconciler.ts propsChanged, mount/update/retain/unmount |
 
-## Dual intervention
+## Dual intervention (licensed arms)
 
-| Arm | vdom |
-| --- | --- |
-| I_loop | scientist emits AgentGraph; reconcile mutates composition of K |
-| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process; does not change f_θ |
-| I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump |
-| rollback | unmountAdapterOnFailure; unmount = rollback |
-| eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the gate |
-| closed loop | iterate improveLoop given Obs; pass^k(t) vs cycle t; TO RUN |
-| I_weight slow jump | spawn ≠ mount; after mount, Obs reads new traces |
+| Arm | vdom | License |
+| --- | --- | --- |
+| I_loop | scientist emits AgentGraph; reconcile mutates composition of K; serving does not pause | miss is a topology / policy attractor |
+| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process; does not change f_θ; serving keeps old weights | model does not complete tasks at all |
+| I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump on the slow clock | eval gate passes |
+| rollback | unmountAdapterOnFailure; unmount = rollback | post-mount regression |
+| eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the *gate*, not the paper claim | fixture first-passage |
+| existence loop | iterate improveLoop given Obs | diagnostic that the loop ran |
+| trainer stub | `FakeTrainer` in trainer.ts | **protocol demo only** — not a measured I_weight update |
+
+Do not encode gold reservation IDs as the method. A policy-checklist node encodes rules.
 
 ## Files
 
@@ -51,6 +53,6 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 - src/providers.ts -- DeterministicProvider (Dirac samp), resolveProvider
 - src/capability.ts -- sandboxValidate, propose/mount/unmount
 - src/lifecycle.ts -- gateCapability, gateAdapter, rollback
-- src/trainer.ts -- Trainer port, AdapterArtifact
+- src/trainer.ts -- Trainer port, FakeTrainer (stub), AdapterArtifact
 - src/improve.ts -- improveLoop modes topology / capability / adapter
 - src/benchmarks.ts -- runBenchmark score; add tau_S tomorrow

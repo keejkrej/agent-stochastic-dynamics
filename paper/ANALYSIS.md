@@ -1,30 +1,32 @@
-# The self-observe / self-improve loop
+# Diagnostics: existence and arm choice
 
-**What we must show.** A *closed loop*, not a one-shot before/after:
+**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Honest negative \(I_{\mathrm{loop}}\) licenses \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`.
+
+**What these notes record.** Existence of the loop and arm choice, not a one-shot before/after and not a leaderboard:
 
 \[
 \text{self-observe}\;\to\;\text{self-improve}\;\to\;\text{self-observe}\;\to\;\cdots
 \]
 
-Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
+Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. $\mathrm{pass}^k(t)$ along the loop is a diagnostic that an arm fired, not a leaderboard. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
 
-**Status.** A live closed loop on $\tau^2$ now exists: `experiments/improve-live-0731.json` (2026-08-19 14:11 CEST). Official airline tasks $39,44,41$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$. $\mathrm{pass}^1(t)=(1/3,\,0,\,1/3)$. $I_{\mathrm{loop}}$ (Self-Refine, then validator) did not raise $p_{\mathrm{hit}}$. Honest. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* that figure:
+**Status.** Live airline diagnostics exist: `experiments/improve-live-0731.json` (2026-08-19 14:11 CEST). Official airline tasks $39,44,41$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$. One-shot $p_{\mathrm{hit}}=0.333$; generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; policy-checklist $0.333\to 0$. Task 39 still misses MSJ4OA (method encodes rules, never gold IDs); 44 transfer / zero upgrades; 41 hang / error. $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$. That licenses $I_{\mathrm{weight}}$, not a failed leaderboard attempt. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
 
-- **Ceiling (easy slice, do not lead).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. Static score. $\mathrm{Obs}$ should `wait`. Not the loop.
-- **Diagnostic (licenses $I_{\mathrm{loop}}$ on cycle $t=0$, not the loop).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
+- **Wait fixed point (not self-improvement).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. $\mathrm{Obs}$ should `wait`.
+- **Topology-attractor diagnostic (licenses $I_{\mathrm{loop}}$).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
 
 No number below is invented.
 
-**Thesis.** A vdom agent observes its own traces. From $\mathrm{Obs}$ it either
+**Arm choice.** From $\mathrm{Obs}$:
 
-- $I_{\mathrm{loop}}$: mutate the AgentGraph (composition of $K$) — critics, refine, validators;
-- $I_{\mathrm{weight}}$: dispatch an async trainer; serving keeps old $f_\theta$; mount only if the eval gate passes.
+- $I_{\mathrm{loop}}$ when the miss is a topology / policy attractor — mutate the AgentGraph (composition of $K$);
+- $I_{\mathrm{weight}}$ when the model does not complete tasks at all — async trainer; serving keeps old $f_\theta$; mount only if the eval gate passes. `FakeTrainer` is a protocol demo.
 
-Then it observes again. That iteration *is* the process.
+Then it observes again. That iteration is the process the framework names.
 
 ---
 
-## 0. The result (closed loop)
+## 0. Negative $I_{\mathrm{loop}}$ on live airline (licenses $I_{\mathrm{weight}}$)
 
 Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `improveLoop` already loops on `maxIters`; `python/tau2_vdom/` registers `--agent vdom`). Official $\tau^2$ owns domains, tools, user simulator, and `compute_metrics`. This repo does not reimplement retail.
 
@@ -52,7 +54,7 @@ PYTHONPATH=python python3 -m tau2_vdom \
 | $1$ | 39 miss, 44 miss, 41 hung $>8$ min (skipped) | $I_{\mathrm{loop}}$ (Self-Refine) | $0$ | $0$ |
 | $2$ | 39 miss, 41 hit, 44 miss | $I_{\mathrm{loop}}$ (validator) | $1/3$ | $1/3$ |
 
-This table *is* the figure. Measured live on OpenRouter `deepseek/deepseek-v4-flash-0731`, airline tasks $39,44,41$, $k=1$, `stopReason: loop-exhausted`, `servingPaused: false`. JSON: `experiments/improve-live-0731.json` (copied from vdom-harness `eval/tau2/improve-live-0731.json`). $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot. Round-1 $0$ is a smaller denominator (task 41 skipped). Not invented. Cite the same numbers in `paper/iclr2027/main.tex`.
+This table is a **diagnostic** that the loop ran and that $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$. Measured live on OpenRouter `deepseek/deepseek-v4-flash-0731`, airline tasks $39,44,41$, $k=1$, `stopReason: loop-exhausted`, `servingPaused: false`. JSON: `experiments/improve-live-0731.json` (copied from vdom-harness `eval/tau2/improve-live-0731.json`). Generic $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$ vs naive one-shot ($0.333\to 0\to 0.333$). Policy-checklist on the same slice is $0.333\to 0$. Round-1 $0$ is a smaller denominator (task 41 skipped / hung). Not invented. These license $I_{\mathrm{weight}}$. Cite the same numbers in `paper/iclr2027/main.tex`.
 
 ---
 
@@ -278,10 +280,10 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 
 Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
-**The paper result is the closed loop** $\mathrm{pass}^k(t)$, not a static $\mathrm{pass}^k$ and not a one-shot before/after. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). The live 3-task airline loop is $1/3,0,1/3$; we still do not invent a larger $\tau^2$ table.
+**The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). The live 3-task airline diagnostic is $0.333\to 0\to 0.333$ (generic) and $0.333\to 0$ (policy-checklist); we still do not invent a larger $\tau^2$ table.
 
 ---
 
 ## 11. One-paragraph claim (for the paper)
 
-The process is a closed loop: self-observe → self-improve → self-observe → ⋯. Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock; $I_{\mathrm{weight}}$ jumps on the slow clock; then $\mathrm{Obs}$ reads the new traces. The figure is $\mathrm{pass}^k(t)$ versus cycle $t$ (live airline $39,44,41$ on 0731: $1/3,\,0,\,1/3$; $I_{\mathrm{loop}}$ did not raise $p_{\mathrm{hit}}$; vdom-harness `python -m tau2_vdom.improve`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That diagnostic licenses $I_{\mathrm{loop}}$ on cycle $t=0$; it is not the loop. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a ceiling, not the lead number. Theory names $X=(H,M,E,C)$, $K_C$, three channels, two clocks, and spawn $\neq$ mount.
+The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Live airline $39,44,41$ on 0731: one-shot $0.333$; generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; policy-checklist $0.333\to 0$ — diagnostics that license $I_{\mathrm{weight}}$, not a failed $\tau^2$ attempt (vdom-harness `python -m tau2_vdom.improve`). On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
