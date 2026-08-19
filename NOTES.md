@@ -1,5 +1,7 @@
 # Related work and citations
 
+[vdom-harness](https://github.com/keejkrej/vdom-harness) is the accompanying runtime submitted with this paper, not an item in the table below. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+
 Gap: no existing framework does all three of (i) closed-loop hybrid Markov process, (ii) typed samp/num/env channels, (iii) graph edits as kernel interventions. The literature is not empty.
 
 ## Table
@@ -26,4 +28,3 @@ Gap: no existing framework does all three of (i) closed-loop hybrid Markov proce
 - arXiv:2603.14588, 2607.13591, 2512.22716, 2508.06433 (memory)
 - arXiv:2303.11366 Reflexion; 2303.17651 Self-Refine
 - Freidlin-Wentzell; Puterman MDP; Kaelbling POMDP; Gumbel 1954
-- https://github.com/keejkrej/vdom-harness

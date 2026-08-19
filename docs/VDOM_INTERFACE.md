@@ -1,6 +1,12 @@
 # Map X, K, C onto vdom-harness
 
-Companion: https://github.com/keejkrej/vdom-harness (do not clone). After PR #2 (model bind) and PR #3 (improveLoop).
+This repo (`agent-stochastic-dynamics`) is the main ICLR 2027 paper repo: theory, kernel, experiments, draft.
+
+Accompanying implementation (submitted with the paper, not a side project, not related-work-only): https://github.com/keejkrej/vdom-harness
+
+Do not clone. Link only. After PR #2 (model bind) and PR #3 (improveLoop).
+
+The runtime is a self-observing agent that reengineers its loop and/or dispatches async weight updates. Papers, blogs, GitHub, X, and other agents are inputs to that agent, not the product.
 
 ## State
 

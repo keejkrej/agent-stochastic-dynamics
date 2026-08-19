@@ -4,6 +4,12 @@ First target: ICLR 2027. Abstract 18 Sep 2026 AoE, paper 25 Sep 2026 AoE.
 Backup: ICML 2027 (Jan 2027) if ICLR slips.
 PRL is not the first submission.
 
+## Two artifacts (submitted together)
+
+This repository is the **main paper repo**: theory, typed-noise kernel, experiments, ICLR draft.
+
+[vdom-harness](https://github.com/keejkrej/vdom-harness) is the **accompanying implementation**, submitted with the paper. It is not a side project and not related-work-only. The runtime is a self-observing agent that reengineers its loop and/or dispatches async weight updates. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product. Do not clone vdom into this tree; link it.
+
 ## Why ICLR first
 
 The object is a self-observing agent with a dual intervention (loop vs async weights) on a typed-noise hybrid kernel. That is representation / agent / test-time compute, not a four-page physics letter. ICLR takes 9-page theory-plus-small-experiments drafts. Reciprocal reviewing and the one-paper cap for authors without a listed venue paper apply; OpenReview profiles must exist before the abstract deadline.

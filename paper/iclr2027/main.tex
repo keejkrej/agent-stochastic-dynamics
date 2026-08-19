@@ -37,6 +37,9 @@ There are two clocks. The fast clock $n$ is the serving loop---sampling noise an
 
 Topology is a value \citep{vdomharness}. A scientist that emits a graph is $I_{\mathrm{loop}}$. A trainer that returns an adapter is $I_{\mathrm{weight}}$. Self-observation is what licenses both. Determinism is allocated on the fast clock; learning is gated on the slow clock.
 
+\paragraph{Two artifacts.}
+The theory, the typed-noise kernel, the experiments, and this draft live in the \texttt{agent-stochastic-dynamics} repository. We submit with the paper an accompanying implementation \citep{vdomharness}: a self-observing agent that reengineers its loop and/or dispatches asynchronous weight updates. Papers, blogs, GitHub repositories, social posts, and other agents are inputs to that runtime, not the product.
+
 \paragraph{What we are not claiming.}
 We are not claiming that Langevin dynamics applies to the loop, nor that the closed loop is an SDE on a latent manifold. Generation-SDE papers \citep{sde2408,sde2510,lgoc2605} model token generation. Memory-as-MDP papers \citep{slmv3,memcon,memento2,memp} enlarge memory actions. Reflexion and Self-Refine \citep{reflexion,selfrefine} are particular loop mutations without weight updates. The gap is the pair $(\mathrm{Obs},\{I_{\mathrm{loop}},I_{\mathrm{weight}}\})$ on a typed-noise hybrid kernel.
 
@@ -64,7 +67,7 @@ Three channels, conditionally independent given $X_n$: sampling (designed; vanis
 
 \section{Self-observation and two clocks}
 
-\textbf{Observation.} $\mathrm{Obs}$ maps traces and first-passage proxies to features in $M$. It is a statistic, not a noise source. In the companion runtime this is \texttt{traces} plus \texttt{runBenchmark.score} \citep{vdomharness}.
+\textbf{Observation.} $\mathrm{Obs}$ maps traces and first-passage proxies to features in $M$. It is a statistic, not a noise source. In the accompanying runtime this is \texttt{traces} plus \texttt{runBenchmark.score} \citep{vdomharness}.
 
 \textbf{Control support.} After $\mathrm{Obs}$, $P^{\mathrm{ctrl}}$ takes values in a finite set: graph mutation, spawn trainer, mount adapter, rollback, capability mount, commit, wait. Reconcile is deterministic. Spawn does not change $f_\theta$. Mount is allowed only if an artifact is ready \emph{and} $\hat p_{\mathrm{hit}}\ge\mathrm{threshold}$ on a fixture.
 
@@ -132,7 +135,7 @@ A prior $N=2$ probe at $\tau=0.7$ hit all three tasks; that does not hold at $N=
 
 \section{What this buys a builder}
 
-In vdom-harness, improveLoop is already control given Obs: topology, capability, or adapter, gated by eval; unmount is rollback. Make Obs a first-class memory write. Keep the trainer out-of-process. Slow-clock mounts stay gated.
+In the accompanying runtime \citep{vdomharness}, improveLoop is already control given Obs: topology, capability, or adapter, gated by eval; unmount is rollback. Make Obs a first-class memory write. Keep the trainer out-of-process. Slow-clock mounts stay gated. Papers, blogs, GitHub, and other agents remain inputs, not the product.
 
 \section{Conclusion}
 
@@ -142,7 +145,7 @@ The paper exists because a vdom agent can watch itself and then edit its loop or
 \subsection*{AI use statement}
 Generative tools were used as coding assistants. Reported numbers come from tests and experiment scripts. We take responsibility for the final content.
 \subsection*{Reproducibility statement}
-See paper/FRAMEWORK.md, experiments/, and the vdom-harness companion.
+See paper/FRAMEWORK.md and experiments/ in this repository, and the accompanying runtime \citep{vdomharness}.
 \bibliography{iclr2027_conference}
 \bibliographystyle{iclr2027_conference}
 \end{document}

@@ -2,7 +2,7 @@
 
 **Status.** Theoretical framework. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim.
 
-**Companion.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the operational counterpart (TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts). This document does not clone that repo. It writes the process of which vdom is the control.
+**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that reengineers its loop and/or dispatches async weight updates. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
 
 **Thesis.** A vdom agent can *observe itself*: it reads its own traces, first-passage times, and failures, and writes a critique of its own path measure into memory. From that observation it has a dual intervention. (1) *Loop:* emit a new AgentGraph; reconcile mutates the composition of the serving kernel \(K\). (2) *Weights:* dispatch an asynchronous trainer (HF job / LoRA). The serving loop keeps running on the old \(f_\theta\). When the artifact is ready *and* the eval gate passes, reconcile swaps the model pointer. Failed eval is no-switch / rollback. Two clocks: fast serving \(n\), slow adapter jumps. Determinism and learning are allocated, not assumed.
 
