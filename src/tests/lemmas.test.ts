@@ -131,3 +131,21 @@ test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
   assert.equal(mounted.C.modelId, "adapted:a1");
   assert.equal(mounted.C.adapterId, "a1");
 });
+
+test("live flags parse N, temps, cascade; rate-limit detector; no-key rollout", async () => {
+  const { parseLiveFlags, isRateLimited, liveRollout, couplingMemory } = await import("../live.js");
+  const f = parseLiveFlags(["--N", "12", "--temps", "0,0.7", "--max-tokens", "32", "--cascade", "6"]);
+  assert.equal(f.N, 12);
+  assert.deepEqual(f.temps, [0, 0.7]);
+  assert.equal(f.maxTokens, 32);
+  assert.equal(f.cascade, 6);
+  assert.equal(isRateLimited(new Error("OpenRouter 429: rate limit")), true);
+  assert.equal(isRateLimited(new Error("OpenRouter 500: oops")), false);
+  const { DeterministicProvider } = await import("../deterministic.js");
+  const { WORD_REVERSE } = await import("../tasks.js");
+  const p = new DeterministicProvider();
+  const tr = await liveRollout(WORD_REVERSE, p, { seed: 1, temperature: 0, maxTokens: 16 });
+  assert.equal(tr.taskId, "word-reverse");
+  assert.ok(tr.steps.length >= 1);
+  assert.ok(couplingMemory(WORD_REVERSE).lesson);
+});

@@ -90,6 +90,7 @@ export type CompleteOpts = {
   temperature?: number;
   seed?: number;
   role?: string;
+  maxTokens?: number;
 };
 
 export type Provider = {

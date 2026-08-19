@@ -106,7 +106,29 @@ Sampling entropy ($N=400$): $0$ bits at $\tau=0$; $1.79$ bits at $\tau=1.5$. Num
 
 \subsection{Live serving channel}
 
-Six rollouts at $\tau=0.7$ on \texttt{deepseek/deepseek-v4-flash-0731}: word-reverse $2/2$ hit in one step; calculator $2/2$ hit in two steps (add then mul); retrieval-QA $2/2$ hit in one step. Traces in \texttt{experiments/live-0731.json}. Absent a key, DeterministicProvider is used. We do not invent further numbers.
+OpenRouter \texttt{deepseek/deepseek-v4-flash-0731} only (not the April preview). $N=12$ first-passage rollouts per task at each of $\tau=0$ and $\tau=0.7$ (72 traces; $\mathrm{max\_tokens}=48$). A one-bit memory coupling uses $N=6$ pairs per task per $\tau$ (72 further rollouts). Traces and figures: \texttt{experiments/live-0731.json}, \texttt{live-phit.svg}, \texttt{live-cascade.svg}.
+
+\begin{center}
+\small
+\begin{tabular}{llccc}
+\toprule
+Task & $\tau$ & $N$ & $p_{\mathrm{hit}}$ & mean $\tau_S$ \\
+\midrule
+word-reverse & $0$ & $12$ & $0/12$ & --- \\
+word-reverse & $0.7$ & $12$ & $0/12$ & --- \\
+calculator & $0$ & $12$ & $0/12$ & --- \\
+calculator & $0.7$ & $12$ & $0/12$ & --- \\
+retrieval-QA & $0$ & $12$ & $12/12$ & $1$ \\
+retrieval-QA & $0.7$ & $12$ & $12/12$ & $1$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Word-reverse repeats \texttt{reverse\_entire} for all six steps (timeout) at both temperatures. Calculator emits the correct first tool \texttt{add(3,5)} on every trial, then repeats it instead of \texttt{mul(8,2)}. Retrieval-QA hits in one step: at $\tau=0$, $12/12$ via \texttt{search:iclr} (the snippet contains ``founded in 2013); at $\tau=0.7$, $11/12$ search and $1/12$ \texttt{answer:2013}. Mean $\tau_S$ is over hits only; misses have no $\tau_S$.
+
+Coupling (same seed; memory bit = lesson / hint / retrieved fact). Word-reverse first-action disagreement $2/6$ at both $\tau$; the split copy hits $2/6$ (one-step \texttt{reverse\_each\_word}) while the base copy is $0/6$; mean action Hamming $2$. Calculator first actions stay coupled on \texttt{add}; at $\tau=0$, later-step Hamming $1.5$ and split $p_{\mathrm{hit}}=2/6$; at $\tau=0.7$, Hamming $0$ and split $0/6$. Retrieval stays a hit on both copies; at $\tau=0.7$ first-action disagreement $3/6$ (search vs direct answer).
+
+A prior $N=2$ probe at $\tau=0.7$ hit all three tasks; that does not hold at $N=12$. Absent a key, DeterministicProvider is used. We do not invent further numbers.
 
 \section{What this buys a builder}
 

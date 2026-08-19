@@ -47,6 +47,7 @@ export class OpenRouterProvider implements Provider {
         messages: msgs,
         temperature: opts?.temperature ?? 0,
         seed: opts?.seed,
+        max_tokens: opts?.maxTokens ?? 48,
       }),
     });
     if (!res.ok) {
