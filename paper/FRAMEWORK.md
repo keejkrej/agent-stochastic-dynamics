@@ -24,7 +24,7 @@ An LLM-based agent is not a token generator. It is a closed loop
 \text{model}\;\to\;\text{action / tool call}\;\to\;\text{observation}\;\to\;\text{memory / state}\;\to\;\text{model}.
 \]
 
-Inside one generation, weights \(\theta\) are fixed and the core map \(f_\theta\) from context to logits is deterministic. Between steps the graph, the bound provider, and the adapter may jump: that is what vdom's reconciler, `PhysicalNode.provider`, capability gates, and adapter mounts do.
+Inside one generation, weights \(\theta\) are fixed and the core map \(f_\theta\) from context to logits is deterministic. Between steps the graph \(C\), the catalog pointer \(S\), and the adapter may jump: that is what vdom's reconciler, a `CatalogPointer` write, capability gates, and adapter mounts do. Mount writes \(S\); it does not rebind `n.model` or spray a global `PhysicalNode.provider`.
 
 **Definition 0.1 (hybrid time).** An *agent step* is one generation plus its environment and memory updates. Time \(n\in\mathbb{N}\) is discrete and event-driven. There is no underlying continuous clock on which the loop is a diffusion.
 
@@ -319,7 +319,7 @@ A commit gate collapses an ensemble of (k\) particles to one trajectory. It rais
 
 ### Lemma 7.7 (two clocks; request \(\neq\) rebind)
 
-While a slow request is in flight, the fast process remains Markov with kernel \(K_{C,S}\) for the *pre-request* pair \((C,S)\). \(S\) is frozen. `servingPaused=false`. Arrival is an optional exogenous time \(T_{\mathrm{adapt}}\). On \(\{T_{\mathrm{adapt}}=n\}\cap\{g=\mathrm{mount}\}\) the kernel switches to \(K_{C,S'}\) by rebinding `PhysicalNode.provider` / `n.model`; otherwise it does not. This is a piecewise-homogeneous hybrid Markov process. It is not a diffusion in \(\theta\). It is not SGD. It is not a trainer job. On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813), a cell.
+While a slow request is in flight, the fast process remains Markov with kernel \(K_{C,S}\) for the *pre-request* pair \((C,S)\). \(S\) is frozen. `servingPaused=false`. Arrival is an optional exogenous time \(T_{\mathrm{adapt}}\). On \(\{T_{\mathrm{adapt}}=n\}\cap\{g=\mathrm{mount}\}\) mount writes catalog pointer \(S\) and the kernel switches to \(K_{C,S'}\); otherwise it does not. Mount does not rebind `n.model` and does not spray a global `PhysicalNode.provider`. Jump iff later serving uses \(S'\). Official later-serving helpers must pass \(S\); if a caller omits the SKU argument, bound / `n.model` still win. Do not claim \(X_n.S\). This is a piecewise-homogeneous hybrid Markov process. It is not a diffusion in \(\theta\). It is not SGD. It is not a trainer job. On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813), a cell.
 
 **Proof sketch.** The slow request writes neither \(C\) nor \(S\) at request time (Definition 6.2). The only \(S\)-changing map is the gated mount / rollback, a function of first-passage (Definition 5.3), not of “the other SKU exists.” \(S\) jumped iff later serving uses the new pointer. If later serving still uses 0731, there was no jump. \(\square\)
 
