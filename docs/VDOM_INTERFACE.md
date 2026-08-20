@@ -36,13 +36,13 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | Arm | vdom | License |
 | --- | --- | --- |
 | I_loop | scientist emits AgentGraph; reconcile mutates composition of K; serving does not pause | completed miss with a topology / policy attractor (Lemma 7.9) |
-| I_weight request | request a different servable f_θ' (catalog id, or trained adapter if one exists); serving keeps f_θ | incomplete episode, or completed miss with no identified C-attractor. Hung must not default to I_loop unless loopExhausted. Not fine-tuning. |
-| I_weight mount | lifecycle.ts gateAdapter; rebind PhysicalNode.provider / AgentNode.model | eval gate passes (Lemma 7.7, 7.8). θ jumped iff later serving uses f_θ'. On this stack: 0731 → 0813 |
+| catalog rebind (implemented slow arm) | request a different servable model id; serving keeps old f_θ (`servingPaused=false`); gated mount rebinds PhysicalNode.provider / n.model | incomplete (hung / crash / no-write), or completed miss with no identified C-attractor. Hung must not default to I_loop unless loopExhausted. Not fine-tuning. Not a LoRA. Not self-improvement via a stronger API. Do not report p_hit(0813) vs p_hit(0731). |
+| catalog mount | lifecycle.ts gateAdapter; rebind PhysicalNode.provider / n.model | eval gate passes (Lemma 7.7, 7.8). Jump iff later serving uses the new provider. Pair: 0731 → 0813 |
+| I_weight (reserved) | spawn_trainer / FakeTrainer | **unimplemented** here. Original definition: trainer → gated θ'. Demoted. Not the actuator we can run. |
 | rollback | unmountAdapterOnFailure; unmount = rollback | post-mount regression |
 | eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the *gate*, not the paper claim | fixture first-passage |
 | existence loop | iterate improveLoop given Obs | diagnostic that the loop ran |
 | catalog artifact | `deepseek/deepseek-v4-pro-0813` (OpenRouter, GA 2026-08-12) | released checkpoint, not a LoRA, not SGD on hung traces |
-| trainer stub | `FakeTrainer` in trainer.ts | **protocol demo only** — not fine-tuning |
 
 Do not encode gold reservation IDs as the method. A policy-checklist node encodes rules.
 

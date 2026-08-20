@@ -23,7 +23,7 @@ No number below is invented.
 
 - `wait` on wait-hit (identity on $C$);
 - $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph (composition of $K$);
-- $I_{\mathrm{weight}}$ on an *incomplete* episode (hung / transfer-without-writes / crash), or a completed miss with no identified $C$-attractor — request a different servable $f_{\theta'}$ (catalog swap $0731\to 0813$, or a trained adapter if one exists); serving keeps $f_\theta$; gated mount rebinds the provider. $\theta$ jumped iff later serving uses $f_{\theta'}$. Not fine-tuning. Not SGD. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
+- catalog rebind on an *incomplete* episode (hung / crash / no-write), or a completed miss with no identified $C$-attractor — request a different servable model id ($0731\to 0813$); serving keeps $f_\theta$ (`servingPaused=false`); gated mount rebinds `PhysicalNode.provider` / `n.model`. Jump iff later serving uses the new provider. Not fine-tuning. Not a LoRA. Not original $I_{\mathrm{weight}}$ (trainer $\to\theta'$; reserved, unimplemented). Do not report $p_{\mathrm{hit}}(0813)$ vs $p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
 
 Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 

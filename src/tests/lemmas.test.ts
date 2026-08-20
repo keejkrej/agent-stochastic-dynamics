@@ -132,7 +132,7 @@ test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
   assert.equal(mounted.C.adapterId, "a1");
 });
 
-test("Lemma 7.9: typed Obs arm is wait | I_loop | I_weight", () => {
+test("Lemma 7.9: typed Obs arm is wait | I_loop | catalog_rebind", () => {
   const none = { inventedPolicy: false, extraWrite: false, toolThrash: false };
   const thrash = { inventedPolicy: false, extraWrite: false, toolThrash: true };
   const invented = { inventedPolicy: true, extraWrite: false, toolThrash: false };
@@ -154,22 +154,23 @@ test("Lemma 7.9: typed Obs arm is wait | I_loop | I_weight", () => {
   );
   assert.equal(
     decideArm({ completion: "completed-miss", attractors: none, waitHit: false, pHatHit: 0 }),
-    "I_weight",
+    "catalog_rebind",
   );
   assert.equal(
     decideArm({ completion: "incomplete", attractors: thrash, waitHit: false, pHatHit: 0 }),
-    "I_weight",
+    "catalog_rebind",
   );
   assert.equal(
     decideArm({ completion: "incomplete", attractors: none, waitHit: false, pHatHit: 0 }),
-    "I_weight",
+    "catalog_rebind",
   );
 
   const hung = observe([], 0, { completion: "incomplete" });
-  assert.equal(hung.arm, "I_weight");
-  assert.equal(chooseIntervention(hung), "spawn_trainer");
+  assert.equal(hung.arm, "catalog_rebind");
+  assert.equal(chooseIntervention(hung), "catalog_rebind");
   assert.ok(hung.critique.includes("incomplete"));
   assert.ok(hung.critique.includes("0813"));
+  assert.ok(hung.critique.includes("catalog rebind"));
   assert.equal(CATALOG_IWEIGHT.from, "deepseek/deepseek-v4-flash-0731");
   assert.equal(CATALOG_IWEIGHT.to, "deepseek/deepseek-v4-pro-0813");
 });
