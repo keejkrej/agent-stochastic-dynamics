@@ -7,7 +7,7 @@ import { CALCULATOR, WORD_REVERSE } from "../tasks.js";
 import { createProvider, openRouterKey } from "../openrouter.js";
 import { defaultControl } from "../types.js";
 import { rollout } from "../experiments.js";
-import { applyIntervention, chooseIntervention, decideArm, observe } from "../observe.js";
+import { applyIntervention, CATALOG_IWEIGHT, chooseIntervention, decideArm, observe } from "../observe.js";
 import type { TrainerJob } from "../observe.js";
 
 test("greedy collapse: τ=0, unique argmax, Dirac env/mem/ctrl ⇒ automaton", () => {
@@ -169,6 +169,9 @@ test("Lemma 7.9: typed Obs arm is wait | I_loop | I_weight", () => {
   assert.equal(hung.arm, "I_weight");
   assert.equal(chooseIntervention(hung), "spawn_trainer");
   assert.ok(hung.critique.includes("incomplete"));
+  assert.ok(hung.critique.includes("0813"));
+  assert.equal(CATALOG_IWEIGHT.from, "deepseek/deepseek-v4-flash-0731");
+  assert.equal(CATALOG_IWEIGHT.to, "deepseek/deepseek-v4-pro-0813");
 });
 
 test("live flags parse N, temps, cascade; rate-limit detector; no-key rollout", async () => {

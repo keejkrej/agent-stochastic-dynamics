@@ -7,14 +7,15 @@
  * Closed loop on the fast clock:
  *   C_{n+1} ~ P^ctrl(· | C_n, Obs(traces_n))
  * After I_loop or a gated I_weight mount, Obs reads the *new* traces and may fire again.
- * I_weight jumps (mount) live on the slow clock. wait is a fixed point.
+ * I_weight requests a different servable f_θ' on the slow clock; mount rebinds the provider.
+ * Not fine-tuning. Not SGD. θ jumped iff later serving uses f_θ'. wait is a fixed point.
  *
  * Typed rule: paper/FRAMEWORK.md Lemma 7.9 / paper/NOTES_ARM_CHOICE.md
  *   wait-hit or hit ∧ p_hat = 1 → wait
  *   incomplete (hung / transfer-without-writes / crash) → I_weight
  *   completed-miss ∧ attractor (invented policy / extra write / tool thrash) → I_loop
  *   completed-miss ∧ no attractor → I_weight
- * Extra H is not an arm. Hung must not default to I_loop.
+ * Extra H is not an arm. Hung must not default to I_loop unless loopExhausted.
  */
 import type { Control, StepTrace } from "./types.js";
 
@@ -48,6 +49,12 @@ export type ObsDecisionIn = {
 };
 
 export type LicensedArm = "wait" | "I_loop" | "I_weight";
+
+/** Concrete I_weight artifact on this stack: released checkpoint, not a LoRA. */
+export const CATALOG_IWEIGHT = {
+  from: "deepseek/deepseek-v4-flash-0731",
+  to: "deepseek/deepseek-v4-pro-0813",
+} as const;
 
 export type ObsFeatures = {
   nSteps: number;
@@ -143,14 +150,15 @@ export function observe(
   if (typed === "wait") {
     critique = "path measure hits S; wait";
   } else if (typed === "I_weight" && completion === "incomplete") {
-    critique = "incomplete episode; I_weight: spawn trainer (I_loop on empty traces unidentified)";
+    critique =
+      "incomplete episode; I_weight: request catalog f_θ' (0731→0813); I_loop on empty traces unidentified; not SGD";
   } else if (typed === "I_loop") {
     critique = "metastable loop; I_loop: forbid last failed action / Self-Refine; loop mutation";
   } else if (knowledgeMiss || typed === "I_weight") {
-    critique = "knowledge miss or unidentified C-failure; I_weight: spawn trainer";
+    critique = "knowledge miss or unidentified C-failure; I_weight: request catalog f_θ' (0731→0813)";
     arm = "I_weight";
   } else if (lastActions.includes("reverse_entire") || lastActions.includes("answer:10")) {
-    critique = "fixture miss; loop mutation or spawn trainer";
+    critique = "fixture miss; I_loop graph mutation (same f_θ)";
     arm = "I_loop";
   } else {
     critique = "fixture miss; inspect cascade / tools";
@@ -177,12 +185,13 @@ export function chooseIntervention(obs: ObsFeatures, job?: TrainerJob): Interven
   if (job?.status === "ready" && job.resultModelId) return "mount_adapter";
   if (job?.status === "failed") return "rollback";
   if (job?.status === "running") return "wait";
+  // spawn_trainer is the request action name (legacy). Not SGD. Request 0731→0813.
   if (obs.completion === "incomplete" || obs.arm === "I_weight") return "spawn_trainer";
   if (obs.arm === "I_loop" || obs.critique.includes("loop mutation")) return "graph_mutation";
   return "spawn_trainer";
 }
 
-/** Slow clock: spawn does not change f_θ. Mount does. */
+/** Slow clock: request does not change f_θ. Gated mount rebinds the provider. */
 export function applyIntervention(
   C: Control,
   action: Intervention,

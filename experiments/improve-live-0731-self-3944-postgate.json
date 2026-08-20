@@ -19,7 +19,7 @@
   "iWeight": null,
   "iWeightLicensed": true,
   "iWeightTaken": false,
-  "iWeightNote": "Hang on 44 licenses I_weight (Lemma 7.9 clause 2), not another critic. Runtime still tagged I_loop+hung — type error. max-rounds 1 stopped after I_loop. 0731 cannot take a LoRA; I_weight is spawn/gate/mount-or-reject + surrogate/FakeTrainer, never a fake 0731 adapter win. Do not invent post-I_weight live numbers.",
+  "iWeightNote": "Hang on 44 licenses I_weight (Lemma 7.9 clause 2): request catalog f_theta' 0731->0813. Serving stays on 0731. Gated mount rebinds the provider. theta jumped iff later serving uses 0813. Not SGD on hung traces. Not fine-tuning. Runtime still tagged I_loop+hung unless loopExhausted — type error; that falsifies the split if left in place. iWeight null: licensed, not taken. Do not invent post-mount live numbers.",
   "pHitSequence": [0.0, 0.0],
   "pHitNote": "Do not lead with 0→0. Round 0 p_hit is on completed tasks only (39 miss). Task 44 hung/timeout (taskPHit null, skipped 44:t0:timeout, reward null, nmsg 0) is not a measured 0. Round 1: both completed; p_hit stayed 0. Completion moved on 44 (hung → finished miss). Evidence for the typed rule, not a score.",
   "passHatK": {
@@ -76,7 +76,7 @@
       "pHit": [null, 0.0],
       "obsR0": "I_loop+hung",
       "completion": ["hung/timeout", "finished miss"],
-      "note": "Hang licenses I_weight (Lemma 7.9). After I_loop, finished then illegal cancel. Not a measured r0 0."
+      "note": "Hang licenses I_weight (Lemma 7.9) as catalog 0731->0813, not SGD. After I_loop, finished then illegal cancel. Not a measured r0 0. No mount rebound serving, so no jump."
     }
   },
   "gateBehaved": true,
@@ -97,10 +97,10 @@
   },
   "stillMissing": [
     "serving mid-turn get_agent_graph / set_agent_graph was never called (zero calls)",
-    "I_weight was licensed by the hang but not taken (max-rounds 1; iWeight null)",
+    "I_weight was licensed by the hang but not taken (max-rounds 1; iWeight null); no mount rebound serving to 0813, so there was no jump",
     "no post-I_weight live numbers; do not invent any",
-    "0731 cannot take a LoRA; do not fake an adapter win",
-    "runtime hung still defaults to I_loop (Lemma 7.9 type error)"
+    "we cannot fine-tune; I_weight is a catalog/checkpoint request, not a LoRA",
+    "runtime hung still defaults to I_loop unless loopExhausted (Lemma 7.9 type error; split is dead if left)"
   ],
   "honestNote": "Evidence for Lemma 7.9, not a SOTA miss. Mixed batch with a hang: applyScope looped both (no wait-hit); gate behaved. Self I_loop still a cancel attractor. Completion moved on 44 (hung → finished miss). The hang licenses I_weight, not another critic. Do not lead with 0→0.",
   "sourceFile": "eval/tau2/improve-live-0731-self-3944-postgate.json",
