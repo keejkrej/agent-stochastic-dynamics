@@ -1,14 +1,16 @@
 /**
  * Typed objects for the hybrid agent process.
  *
- *   X_n = (H_n, M_n, E_n, C_n) ∈ 𝒱* × ℳ × ℰ × 𝒞
+ *   X_n = (H_n, M_n, E_n, C_n, S_n) ∈ 𝒱* × ℳ × ℰ × 𝒞 × 𝒮
  *
- * One step is a composition of kernels, not a diffusion. See paper/FRAMEWORK.md.
+ * C is the fast graph. S is the slow decoder pointer.
+ * If the model id sits inside C, both arms write the same bag.
+ * See paper/FRAMEWORK.md Definition 1.1.
  */
 
 export type NoiseChannel = "samp" | "num" | "env";
 
-/** Control configuration C: AgentGraph + decoding knobs. */
+/** Fast graph C: AgentGraph + decoding knobs. Does not contain the decoder pointer. */
 export type Control = {
   temperature: number;
   seed: number;
@@ -20,10 +22,14 @@ export type Control = {
   /** If true, freeze remaining branching (commit gate). */
   commit: boolean;
   bestOfK: number;
-  modelId: string;
-  adapterId?: string;
   capabilities: readonly string[];
   graphId: string;
+};
+
+/** Slow decoder pointer S. Frozen on the fast clock. Price is not a field. */
+export type SlowPointer = {
+  modelId: string;
+  adapterId?: string;
 };
 
 export type EnvState = {
@@ -39,6 +45,7 @@ export type HybridState = {
   M: Record<string, string>;
   E: EnvState;
   C: Control;
+  S: SlowPointer;
 };
 
 export type Action = {
@@ -107,10 +114,16 @@ export function defaultControl(partial?: Partial<Control>): Control {
     seed: 0,
     commit: false,
     bestOfK: 1,
-    modelId: "toy-naive",
     capabilities: [],
     graphId: "one-shot",
     validator: "none",
+    ...partial,
+  };
+}
+
+export function defaultSlowPointer(partial?: Partial<SlowPointer>): SlowPointer {
+  return {
+    modelId: "toy-naive",
     ...partial,
   };
 }
@@ -126,6 +139,7 @@ export function defaultState(partial?: Partial<HybridState>): HybridState {
       live: false,
     },
     C: defaultControl(),
+    S: defaultSlowPointer(),
     ...partial,
   };
 }

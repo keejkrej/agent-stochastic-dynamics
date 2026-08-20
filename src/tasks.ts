@@ -4,7 +4,7 @@
  */
 import { diracCtrl, diracMem, type EnvKernel, type KernelSpec } from "./kernel.js";
 import type { Action, HybridState, LogitMap, Observation, Trajectory } from "./types.js";
-import { defaultControl, defaultState } from "./types.js";
+import { defaultControl, defaultSlowPointer, defaultState } from "./types.js";
 import { reverseEachWordCorrect, reverseEntire } from "./deterministic.js";
 import type { RNG } from "./rng.js";
 
@@ -36,7 +36,7 @@ const wrLogits: LogitMap = (state, vocab) => {
   const out: Record<string, number> = {};
   for (const v of vocab) out[v] = 0;
   const hasLesson = Boolean(state.M.lesson && state.M.lesson.toLowerCase().includes("each word"));
-  const adapted = state.C.modelId.includes("adapted") || Boolean(state.C.adapterId);
+  const adapted = state.S.modelId.includes("adapted") || Boolean(state.S.adapterId);
   if (adapted || hasLesson) {
     out.reverse_each_word = 4.0;
     out.reverse_entire = 1.0;
@@ -104,10 +104,10 @@ export const WORD_REVERSE: TaskSpec = {
         seed: opts?.seed ?? 0,
         temperature: opts?.temperature ?? 0,
         bestOfK: opts?.bestOfK ?? 1,
-        modelId: opts?.modelId ?? "toy-naive",
         graphId: "word-reverse",
         capabilities: [],
       }),
+      S: defaultSlowPointer({ modelId: opts?.modelId ?? "toy-naive" }),
     }),
 };
 
@@ -131,7 +131,7 @@ const calcLogits: LogitMap = (state, vocab) => {
   const out: Record<string, number> = {};
   for (const v of vocab) out[v] = 0.2;
   const hasSum = state.M["tool:add"] === "8";
-  const adapted = state.C.modelId.includes("adapted");
+  const adapted = state.S.modelId.includes("adapted");
   if (adapted) {
     if (!hasSum) out["tool:add:3,5"] = 5;
     else out["tool:mul:8,2"] = 5;
@@ -193,10 +193,10 @@ export const CALCULATOR: TaskSpec = {
         seed: opts?.seed ?? 0,
         temperature: opts?.temperature ?? 0,
         bestOfK: opts?.bestOfK ?? 1,
-        modelId: opts?.modelId ?? "toy-naive",
         graphId: "calculator",
         capabilities: ["add", "mul"],
       }),
+      S: defaultSlowPointer({ modelId: opts?.modelId ?? "toy-naive" }),
     }),
 };
 
@@ -226,7 +226,7 @@ const qaLogits: LogitMap = (state, vocab) => {
   const out: Record<string, number> = {};
   for (const v of vocab) out[v] = 0.15;
   const retrieved = (state.M["tool:search"] ?? "").includes("2013");
-  const adapted = state.C.modelId.includes("adapted");
+  const adapted = state.S.modelId.includes("adapted");
   if (adapted || retrieved) {
     out["answer:2013"] = 4.5;
     out["tool:search:iclr"] = 1.0;
@@ -284,10 +284,10 @@ export const RETRIEVAL_QA: TaskSpec = {
         seed: opts?.seed ?? 0,
         temperature: opts?.temperature ?? 0,
         bestOfK: opts?.bestOfK ?? 1,
-        modelId: opts?.modelId ?? "toy-naive",
         graphId: "retrieval-qa",
         capabilities: ["search"],
       }),
+      S: defaultSlowPointer({ modelId: opts?.modelId ?? "toy-naive" }),
     }),
 };
 

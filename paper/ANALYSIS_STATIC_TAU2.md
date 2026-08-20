@@ -4,7 +4,7 @@
 
 **What this file is.** Application of the objects in `paper/FRAMEWORK.md` and the closed-loop claim in `paper/ANALYSIS.md` / ICLR `paper/iclr2027/main.tex` (after PR #3) to *this* run. It is a success-set sample from a fixed one-shot graph. It does not replace the cycle table \(\mathrm{pass}^k(t)\).
 
-**One-paragraph claim.** This run is the law \(\mathbb{P}_{C_0}\) of a frozen one-shot graph, not the closed loop \(\mathrm{traces}_t\to\mathrm{Obs}\to P^{\mathrm{ctrl}}\to C_{t+1}\to K_{C_{t+1}}\). \(C\) never jumps: technique `one-shot`, single `solve` node, \(P^{\mathrm{ctrl}}=\mathrm{wait}\) on 20/20 trials, fast clock only, no \(I_{\mathrm{loop}}\), no \(I_{\mathrm{weight}}\). All 20 trials have \(\tau_S<\tau_F\) (reward 1, `user_stop`); official \(\mathrm{pass}^k=1\) for \(k\le 4\); mean (median) event-time \(\tau_S\) is 14.8 (14.5) agent actions. Consecutive same-name tools occur (catalog lookups); consecutive same tool+args occur 0/155; the 0731 `reverse_entire` / `add(3,5)` attractors are absent — the agent exits. Logged \(\mathrm{Obs}\) is `path measure hits S; wait` on every trial. A 1.0 one-shot cannot demonstrate self-improvement: \(P^{\mathrm{ctrl}}\) has no license to fire. Same \(f_\theta\), tasks 0–4 of 114, saturated \(p_{\mathrm{hit}}\). Contrast the toy diagnostic (sequential 0/12). To see the loop, serve a slice where \(\tau_F\) happens or a zero-progress repeat appears.
+**One-paragraph claim.** This run is the law \(\mathbb{P}_{C_0}\) of a frozen one-shot graph, not the closed loop \(\mathrm{traces}_t\to\mathrm{Obs}\to P^{\mathrm{ctrl}}\to C_{t+1}\to K_{C_{t+1}}\). \(C\) never jumps: technique `one-shot`, single `solve` node, \(P^{\mathrm{ctrl}}=\mathrm{wait}\) on 20/20 trials, fast clock only, no \(I_{\mathrm{loop}}\), no \(I_{\mathrm{sku}}\). All 20 trials have \(\tau_S<\tau_F\) (reward 1, `user_stop`); official \(\mathrm{pass}^k=1\) for \(k\le 4\); mean (median) event-time \(\tau_S\) is 14.8 (14.5) agent actions. Consecutive same-name tools occur (catalog lookups); consecutive same tool+args occur 0/155; the 0731 `reverse_entire` / `add(3,5)` attractors are absent — the agent exits. Logged \(\mathrm{Obs}\) is `path measure hits S; wait` on every trial. A 1.0 one-shot cannot demonstrate self-improvement: \(P^{\mathrm{ctrl}}\) has no license to fire. Same \(f_\theta\), tasks 0–4 of 114, saturated \(p_{\mathrm{hit}}\). Contrast the toy diagnostic (sequential 0/12). To see the loop, serve a slice where \(\tau_F\) happens or a zero-progress repeat appears.
 
 ---
 
@@ -46,7 +46,7 @@ On this file:
 | \(P^{\mathrm{ctrl}}\) | Identity. No graph mutation, no trainer spawn, no mount, no rollback, no capability mount. |
 | Clocks | **Fast clock only.** Serving steps \(n\). No slow-clock job, no \(T_{\mathrm{adapt}}\), no gated \(f_\theta\mapsto f_{\theta'}\). |
 | \(I_{\mathrm{loop}}\) | Not applied. |
-| \(I_{\mathrm{weight}}\) | Not applied (neither spawn nor mount). |
+| \(I_{\mathrm{sku}}\) | Not applied (neither request nor mount). |
 | \(f_\theta\) | Constant: `deepseek/deepseek-v4-flash-0731`. |
 
 So \(C_n=C_0\) for every \(n\) on every trial. The recorded law is \(\mathbb{P}_{C_0}\), the one-shot serving kernel. It is *not* the closed-loop process, and it is not a cycle \(t=0,1,\ldots\) of \(\mathrm{pass}^k(t)\).
@@ -232,7 +232,7 @@ That matches the paper operator (`src/observe.ts`): if \(\hat p_{\mathrm{hit}}\g
 
 ---
 
-## 6. Why this does not found \(I_{\mathrm{weight}}\) or \(I_{\mathrm{loop}}\)
+## 6. Why this does not found \(I_{\mathrm{sku}}\) or \(I_{\mathrm{loop}}\)
 
 The 0731 toys *licensed* \(I_{\mathrm{loop}}\) on cycle \(t=0\): same \(f_\theta\), retrieval 12/12, sequential tools 0/12, temperature-invariant attractors, coupling sometimes leaves, \(\tau\) never does.
 
@@ -242,7 +242,7 @@ This file is the opposite sample:
 2. **Easy head.** Tasks 0–4 of 114. Not airline, not telecom, not the remaining 109 retail tasks.
 3. **Saturated \(p_{\mathrm{hit}}\).** 20/20, \(\mathrm{pass}^4=1\). No miss for a mount gate to read; no residual for a trainer to fit.
 4. **No metastable loop.** Repeat-of-args rate 0; the agent exits (Definition 5.5 progressing, not looping).
-5. **No knowledge miss.** No empty search / “I don’t know” that would raise \(I_{\mathrm{weight}}\).
+5. **No incomplete episode.** No hang / no-write / crash that would raise \(I_{\mathrm{sku}}\).
 
 Therefore \(\mathrm{Obs}\) emits `wait`, not `graph_mutation` and not `spawn_trainer`. This run does **not** found either arm. It is a *success-set sample from \(\mathbb{P}_{C_0}\)* on an easy head.
 
@@ -258,14 +258,14 @@ To see the loop we need a slice where \(\tau_F\) happens, or a zero-progress rep
 \]
 under independence. This is reliability across \(k\) i.i.d. repeats, **not** \(\mathrm{pass}@k\) (best of \(k\)).
 
-On this slice every task has 4/4 hits, so \(\mathrm{pass}^4=1\) equals \(\mathrm{pass}@4=1\). They coincide *because the slice is saturated*. A flaky loop that hits once in four trials would have large \(\mathrm{pass}@4\) and \(\mathrm{pass}^4=0\). The \(N=2\) toy fluke is why the \(I_{\mathrm{weight}}\) gate must read \(\mathrm{pass}^k\). This file does not illustrate that gap — it illustrates the other failure mode: a reliability-1 ceiling on which the gate never has a reason to move \(C\).
+On this slice every task has 4/4 hits, so \(\mathrm{pass}^4=1\) equals \(\mathrm{pass}@4=1\). They coincide *because the slice is saturated*. A flaky loop that hits once in four trials would have large \(\mathrm{pass}@4\) and \(\mathrm{pass}^4=0\). The \(N=2\) toy fluke is why the \(I_{\mathrm{sku}}\) gate must read \(\mathrm{pass}^k\). This file does not illustrate that gap — it illustrates the other failure mode: a reliability-1 ceiling on which the gate never has a reason to move \(C\).
 
 ---
 
 ## 8. What this file is not
 
 - Not \(\mathrm{pass}^k(t)\) on the closed loop (cycle table remains TO RUN).
-- Not a founding diagnostic for \(I_{\mathrm{loop}}\) or \(I_{\mathrm{weight}}\) (the 0731 toys remain that).
+- Not a founding diagnostic for \(I_{\mathrm{loop}}\) or \(I_{\mathrm{sku}}\) (the 0731 toys remain that).
 - Not a claim that the model “can use tools” on all of τ² (5 of 114 retail tasks).
 - Not a channel measurement of \(\xi^{\mathrm{num}}\) (unobserved).
 - Not a comparison table against other models.

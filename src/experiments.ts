@@ -56,7 +56,7 @@ export function rollout(task: TaskSpec, opts: {
     taskId: task.id,
     seed: opts.seed,
     temperature: opts.temperature ?? 0,
-    modelId: opts.modelId ?? state.C.modelId,
+    modelId: opts.modelId ?? state.S.modelId,
     provider: "kernel",
     steps,
     outcome,
