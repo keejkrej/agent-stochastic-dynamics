@@ -1,21 +1,17 @@
 /**
- * Self-observation and dual intervention. Author lock: I_loop | I_sku.
+ * Self-observation and dual intervention on (C vs f_θ).
  *
- *   Obs: traces -> features in M
- *   P^ctrl(· | Obs) in {graph_mutation, I_sku, mount_sku, rollback, wait}
- *   spawn_trainer is related work / unimplemented future, not the claim.
- *
- * Serve the cheapest capable SKU. After Obs:
- *   I_loop mutates C, same SKU, fast clock, servingPaused=false.
- *   I_sku requests a more expensive released checkpoint; serving continues
- *   on the cheap SKU; gated mount rebinds PhysicalNode.provider / n.model.
- * Concrete cell: flash-0731 → pro-0813.
- * Jump only on gated mount; later serving must use the new SKU or there was no jump.
- * Do not report p_hit(0813) − p_hit(0731) as a result.
+ *   Obs types the failure and chooses which factor to intervene on.
+ *   I_loop mutates C on the fast clock (same SKU, servingPaused=false).
+ *   Slow clock: gated jump of f_θ, serving unpaused.
+ *   Available actuator on this stack: I_sku catalog rebind 0731→0813
+ *   because we cannot train. That is a cell, not the claim.
+ *   spawn_trainer is unimplemented. SKU swap alone is not novel.
+ *   Do not sell p_hit(0813) − p_hit(0731).
  *
  * Typed rule: paper/FRAMEWORK.md Lemma 7.9
  *   hit → wait
- *   incomplete (hung / crash / no-write) → I_sku
+ *   incomplete (hung / crash / no-write) → slow f_θ actuator (I_sku here)
  *   completed-miss ∧ attractor → I_loop
  * Extra H is not an arm.
  */
@@ -55,7 +51,7 @@ export type ObsDecisionIn = {
 
 export type LicensedArm = "wait" | "I_loop" | "I_sku";
 
-/** Concrete I_sku cell: cheapest capable base, escalate to a released Pro checkpoint. */
+/** Available f_θ cell on this stack (not the claim): catalog rebind because we cannot train. */
 export const SKU_CELL = {
   from: "deepseek/deepseek-v4-flash-0731",
   to: "deepseek/deepseek-v4-pro-0813",
@@ -159,11 +155,11 @@ export function observe(
     critique = "path measure hits S; wait";
   } else if (typed === "I_sku" && completion === "incomplete") {
     critique =
-      "incomplete episode; I_sku escalate 0731→0813; servingPaused=false; I_loop on empty traces unidentified";
+      "incomplete episode; slow f_θ actuator I_sku 0731→0813 (cell); servingPaused=false; I_loop on empty traces unidentified";
   } else if (typed === "I_loop") {
     critique = "metastable loop; I_loop: forbid last failed action / Self-Refine; loop mutation";
   } else if (knowledgeMiss || typed === "I_sku") {
-    critique = "knowledge miss or unidentified C-failure; I_sku escalate 0731→0813";
+    critique = "knowledge miss or unidentified C-failure; slow f_θ actuator I_sku 0731→0813 (cell)";
     arm = "I_sku";
   } else if (lastActions.includes("reverse_entire") || lastActions.includes("answer:10")) {
     critique = "fixture miss; I_loop graph mutation (same f_θ)";

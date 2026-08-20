@@ -23,7 +23,7 @@ No number below is invented.
 
 - `wait` on wait-hit (identity on $C$);
 - $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph, same SKU;
-- $I_{\mathrm{sku}}$ on an *incomplete* episode (hang / crash / no-write) — request a more expensive released checkpoint ($0731\to 0813$); serving keeps the cheap SKU (`servingPaused=false`); gated mount rebinds `PhysicalNode.provider` / `n.model`. Jump iff later serving uses the new SKU. Not a Pro-vs-Flash result. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
+- slow $f_\theta$ actuator on an *incomplete* episode (hang / crash / no-write). Available cell: $I_{\mathrm{sku}}$ ($0731\to 0813$) because we cannot train. Serving keeps current $f_\theta$ (`servingPaused=false`). Jump iff later serving uses the new pointer. A cell, not the claim. Do not sell $p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
 
 Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 

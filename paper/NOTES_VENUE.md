@@ -10,8 +10,8 @@ The paper establishes a **runtime self-improvement framework with theoretical su
 
 - An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env).
 - \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\).
-- Dual intervention: \(I_{\mathrm{loop}}\) | \(I_{\mathrm{sku}}\). Serve cheapest capable SKU; escalate after \(\mathrm{Obs}\). Trainer-spawn is related work, not the claim.
-- Arm choice: `paper/FRAMEWORK.md` Lemma 7.9. Hit \(\to\) wait. Incomplete \(\to I_{\mathrm{sku}}\). Completed miss + attractor \(\to I_{\mathrm{loop}}\). Extra \(H\) is not an arm.
+- Dual intervention on \((C\) vs \(f_\theta)\). \(\mathrm{Obs}\) types the failure and chooses the factor. \(I_{\mathrm{sku}}\) is the available \(f_\theta\) actuator (a cell). SKU swap alone is not the contribution. Trainer-spawn is unimplemented.
+- Arm choice: `paper/FRAMEWORK.md` Lemma 7.9. Hit \(\to\) wait. Incomplete \(\to\) slow \(f_\theta\) actuator. Completed miss + attractor \(\to I_{\mathrm{loop}}\). Extra \(H\) is not an arm. Not a routing paper.
 
 **Experiments are existence and arm-choice diagnostics**, not a \(\tau^2\) SOTA attempt and not “we improve \(\tau^2\) airline.”
 

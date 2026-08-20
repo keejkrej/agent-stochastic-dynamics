@@ -36,7 +36,7 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | Arm | vdom | License |
 | --- | --- | --- |
 | I_loop | scientist emits AgentGraph; reconcile mutates composition of K; same SKU; serving does not pause | completed miss with a topology / policy attractor (Lemma 7.9) |
-| I_sku | request a more expensive released checkpoint; serving keeps cheap SKU (`servingPaused=false`); gated mount rebinds PhysicalNode.provider / n.model | incomplete (hang / crash / no-write). Jump iff later serving uses the new SKU. Base 0731, escalate 0813. Not a Pro-vs-Flash result. |
+| I_sku (available f_θ cell) | catalog rebind because we cannot train; serving keeps current f_θ (`servingPaused=false`); gated mount rebinds PhysicalNode.provider / n.model | incomplete (hang / crash / no-write). A cell, not the claim. SKU swap alone is not novel. Do not sell p_hit(0813)−p_hit(0731). |
 | sku mount | lifecycle.ts gateAdapter; rebind PhysicalNode.provider / n.model | eval gate passes (Lemma 7.7, 7.8) |
 | spawn_trainer | FakeTrainer | related work / unimplemented future, not the claim |
 | rollback | unmountAdapterOnFailure; unmount = rollback | post-mount regression |
