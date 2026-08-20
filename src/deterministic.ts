@@ -100,7 +100,7 @@ export class DeterministicProvider implements Provider {
 }
 
 /**
- * Adapted (post-mount) Dirac map: always reverse-each-word. Models an f_θ jump.
+ * Adapted (post-mount) Dirac map: always reverse-each-word. Models an I_sku catalog-pointer jump.
  */
 export class AdaptedProvider implements Provider {
   name = "adapted";

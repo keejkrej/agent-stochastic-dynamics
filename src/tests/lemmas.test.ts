@@ -32,7 +32,7 @@ test("validator is a support restriction", () => {
   assert.notEqual(actionKey, "invalid_x");
 });
 
-test("model / adapter swap is an f_θ jump", async () => {
+test("catalog pointer rebind is an I_sku jump", async () => {
   const naive = new DeterministicProvider("toy-naive");
   const adapted = new AdaptedProvider("adapted");
   const msgs = [
