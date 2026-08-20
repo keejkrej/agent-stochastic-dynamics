@@ -4,7 +4,7 @@
 
 **Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. Dual *implemented* arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. Typed \(\mathrm{Obs}\) is a contribution only after the controller implements it — the controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) (hung-first: 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty). Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
 
-**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only). TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. \(S\) is specified here. The serving-id cell in the harness is still `n.model`; that cell is the controller log of [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11). This paper does not claim the runtime already stores a separate \(S\). Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only). TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. Specified \(S\) is the catalog pointer of \(X=(H,M,E,C,S)\). [vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13) (merged) stores a `CatalogPointer` `{ sku, servingPaused: false }` beside \(C\). That closes the `n.model` hole: \(I_{\mathrm{sku}}\) does not rewrite \(C\) topology; `n.model` stays 0731. Later serving is typed by \(S\) for mixed 39/44 (commit `7ae763a`): after fixture mount, `providerForNode(solve)` is 0731 on 39 and 0813 on 44. `rebindServing` is gone. `providerForNode` prefers the per-task `CatalogPointer`. `runGraph` passes that SKU as the `complete()` model. This paper does **not** claim \(S\) is already \(X_n.S\) / `HybridState.S`. `servingS0` / `servingSku` remain a process default the per-task values are copied from. If a caller omits the SKU argument, bound / `n.model` still win; official later-serving helpers must keep passing \(S\). Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
 
 **Thesis.** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow catalog pointer*. Do **not** write the slow factor as \(f_\theta\). We cannot train. Dual implemented arms: \(I_{\mathrm{loop}}\) mutates graph \(C\) (same SKU); \(I_{\mathrm{sku}}\) gated-rebinds the catalog pointer (same \(C\)). Wait is the identity. **License for \(I_{\mathrm{sku}}\) is an incomplete episode (hang / no-write / crash), not price.** Completed miss + attractor \(\to I_{\mathrm{loop}}\). Completed miss with no identified attractor of \(C\) \(\to I_{\mathrm{sku}}\) (Lemma 7.9 clause 4). Hits wait. Accumulating \(H\) is neither arm.
 
@@ -62,7 +62,7 @@ If the model pointer sits *inside* fast \(C\) and both arms are `improveLoop` wr
 | \(M_n\) | \(\mathcal{M}\) | fast | Structured memory: vdom `memoryStore`, traces, persistence. |
 | \(E_n\) | \(\mathcal{E}\) | fast | Environment / tool world. |
 | \(C_n\) | \(\mathcal{C}\) | **fast** | *Graph control*: AgentGraph plus decoding knobs (temperature, constraints, validators, commit gates, mounted capabilities). **Does not contain the decoder pointer.** \(I_{\mathrm{loop}}\) writes this coordinate only. |
-| \(S_n\) | \(\mathcal{S}\) | **slow** | *Catalog pointer* (SKU: `PhysicalNode.provider` / `n.model`). Frozen on the fast clock. \(I_{\mathrm{sku}}\) gated-rebinds this coordinate only. Not \(f_\theta\). Price is not a coordinate of \(\mathcal{S}\). `0813` is one available value, not the license. |
+| \(S_n\) | \(\mathcal{S}\) | **slow** | *Catalog pointer* (SKU). Frozen on the fast clock. \(I_{\mathrm{sku}}\) gated-rebinds this specified coordinate only. Not \(f_\theta\). Price is not a coordinate of \(\mathcal{S}\). Runtime ([vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13), merged): `CatalogPointer` beside \(C\); `n.model` stays 0731. Later serving is typed by \(S\) for mixed 39/44. Not per-episode `HybridState.S`. `0813` is one available value, not the license. |
 
 **Definition 1.2 (coarse field).** An optional projection \(z_n = \Pi(X_n)\in\mathbb{R}^d\) (embedding summary, score vector) is a *statistic*, never the true state. Fokker–Planck statements, if any, are about the law of \(z_n\), and only after a mixing hypothesis that must be stated.
 
@@ -242,7 +242,7 @@ S_n & \text{otherwise.}
 | --- | --- | --- |
 | `graph_mutation` (\(I_{\mathrm{loop}}\)) | \(C\) (fast) | Scientist emits \(G'\). `reconcile` is deterministic. Same \(S\). Serving does not pause. |
 | `I_sku` (request) | none yet | Request one available value of \(S\) (on this stack, `0813`). Serving continues on current \(S\) (`servingPaused=false`). **License is incomplete episode, not price.** |
-| `mount_sku` | \(S\) (slow) | Allowed only if the *eval / first-passage gate* passes (Definition 5.3 / Lemma 7.8). Rebind `PhysicalNode.provider` / `n.model`. Jump iff later serving uses \(S'\). “0813 exists” is not a gate (that is always-mount). |
+| `mount_sku` | \(S\) (slow) | Allowed only if the *eval / first-passage gate* passes (Definition 5.3 / Lemma 7.8). Specified write of catalog pointer \(S\). Runtime ([vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13), merged): `CatalogPointer` beside \(C\); `n.model` stays 0731. Later serving is typed by \(S\) for mixed 39/44 (`providerForNode` prefers the per-task pointer). Not `HybridState.S`. “0813 exists” is not a gate (that is always-mount). |
 | `rollback` | \(S\) | Restore the previous decoder pointer. \(C\) unchanged. |
 | `capability_mount` | \(C\) | Change the tool signature of \(P^{\mathrm{env}}\) (gated, same sandbox). |
 | `wait` | neither | Dirac identity. Wait-hit keeps \(C_0\) and \(S_0\) (vdom-harness PR #10). |
@@ -257,7 +257,7 @@ On \(\{T_{\mathrm{adapt}}=n\}\) the gate \(g(S',\mathrm{fixture})\in\{\mathrm{mo
 **Definition 6.4 (dual implemented arms: \(C\) vs SKU vs wait).** After \(\mathrm{Obs}\), two licensed non-identity edits:
 
 1. **\(I_{\mathrm{loop}}\) writes graph \(C\).** Same SKU. Fast clock. License: completed miss + policy / topology attractor.
-2. **\(I_{\mathrm{sku}}\) writes catalog pointer \(S\).** Same \(C\). Gated rebind of `PhysicalNode.provider` / `n.model`. License: **incomplete episode (hang / no-write / crash).** Not price. Not \(f_\theta\). \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. `0813` is one available SKU. SKU swap alone is not the contribution.
+2. **\(I_{\mathrm{sku}}\) writes catalog pointer \(S\).** Same \(C\). Specified gated rebind of \(S\). Runtime ([vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13), merged): `CatalogPointer` beside \(C\); \(I_{\mathrm{sku}}\) does not rewrite \(C\) topology; `n.model` stays 0731. Later serving is typed by \(S\) for mixed 39/44. Not `HybridState.S`. License: **incomplete episode (hang / no-write / crash).** Not price. Not \(f_\theta\). \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. `0813` is one available SKU. SKU swap alone is not the contribution.
 
 Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Failed eval \(\Rightarrow\) no switch.
 
@@ -273,7 +273,7 @@ Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Failed eval \(\Ri
 | memory write rules | (often Dirac) (P^{\mathrm{mem}}\); (\mathrm{Obs}\) is one such write |
 | parallel sample + select | nonlinear kernel (\mathrm{select}(A_1,\ldots,A_k)\) |
 | commit gates | optional stopping; freeze a coordinate of (X\) |
-| catalog rebind (\(I_{\mathrm{sku}}\)) | *stand-in* slow cell: rebind `PhysicalNode.provider` / `n.model`. Not \(f_\theta\). Not the contribution. |
+| catalog rebind (\(I_{\mathrm{sku}}\)) | *stand-in* slow cell: specified write of catalog pointer \(S\). Runtime ([vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13), merged): `CatalogPointer` beside \(C\); later serving typed by \(S\) for mixed 39/44. Not `HybridState.S`. Not \(f_\theta\). Not the contribution. |
 | capability mount | change available tools / (P^{\mathrm{env}}) action set |
 | graph mutation (scientist) | *fast* (I_{\mathrm{loop}}\): change the composition of (K\) |
 
@@ -377,7 +377,7 @@ Wait is the identity. Accumulating \(H\) is not in the output type.
 - If a mount never rebinds serving to 0813, there was no jump (Lemma 7.7: later serving must use the new SKU).
 - Treating \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result of this paper (buying a stronger API; a diagnostic at most).
 
-**Controller log (not a slogan).** [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) implements the map hung-first: 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. \(S\) is specified in this document. The serving-id cell in that runtime is still `n.model`. This paper does not claim the harness already stores a separate \(S\).
+**Controller log (not a slogan).** [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) implements the map hung-first: 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. [vdom-harness PR #12](https://github.com/keejkrej/vdom-harness/pull/12) is the live hung-44 reject cell (omit-after; serving stayed 0731; no live 0813 rebound). [vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13) (merged) stores a `CatalogPointer` beside \(C\) and types later serving by \(S\) for mixed 39/44 (`7ae763a`). This paper does not claim \(S\) is already \(X_n.S\) / `HybridState.S`.
 
 **Diagnostics (evidence for \(\delta\), not SOTA).** See `paper/NOTES_ARM_CHOICE.md`. Self \(I_{\mathrm{loop}}\) on airline \(39/44\) went \(0.5\to 0.0\): \(C\) moved the path measure (loop is real) and a global cancel-policy overwrote a wait-hit (illegal apply; licenses the wait-hit gate). Post-gate, task 44 hung: clause 2 licenses \(I_{\mathrm{sku}}\); the controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11). Extra \(H\) is not \(I_{\mathrm{loop}}\) (Proposition 7.8a.3). Mock \(0\to 0.5\to 1.0\) is a protocol unit test, not a result. Do not report \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result.
 
@@ -400,11 +400,13 @@ Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\m
 
 ## §9 Controller log (vdom-harness)
 
-Lemma 7.9 is not a tomorrow item. The controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11): hung-first, 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. License is incompleteness, not `loopExhausted`.
+Lemma 7.9 is not a tomorrow item. License is incompleteness, not `loopExhausted`. Three citations, one sentence each:
 
-\(S\) is specified in this document. The serving-id cell in the harness is still `n.model`. This paper does not claim the runtime already stores a separate \(S\). Do not put the pointer back inside the *specified* \(C\).
+- [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11): typed \(\mathrm{Obs}\), hung-first, 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty.
+- [vdom-harness PR #12](https://github.com/keejkrej/vdom-harness/pull/12): live hung-44 reject cell; omit-after still rejects; no live 0813 rebound.
+- [vdom-harness PR #13](https://github.com/keejkrej/vdom-harness/pull/13) (merged): stores a `CatalogPointer` `{ sku, servingPaused: false }` beside \(C\). \(I_{\mathrm{sku}}\) writes that pointer; \(I_{\mathrm{loop}}\) writes \(C\); `n.model` stays 0731. Later serving is typed by \(S\) for mixed 39/44 (commit `7ae763a`): after fixture mount, `providerForNode(solve)` is 0731 on 39 and 0813 on 44. `rebindServing` is gone. `providerForNode` prefers the per-task `CatalogPointer`. `runGraph` passes that SKU as the `complete()` model. Unit tests only. The mount is a unit fixture. Not a \(\tau^2\) result.
 
-Remaining interface (not a Lemma 7.9 rewrite): first-passage tags on `traces`; gate is eval / first-passage, not “0813 exists”; later serving must use the new SKU or there was no jump. \(f_\theta\) / trainer remains unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell.
+Remaining identification (not a Lemma 7.9 rewrite): this paper does **not** claim \(S\) is already \(X_n.S\) / `HybridState.S`. `servingS0` / `servingSku` remain a process default the per-task values are copied from. If a caller omits the SKU argument, bound / `n.model` still win; official later-serving helpers must keep passing \(S\). Gate is eval / first-passage, not “0813 exists.” \(f_\theta\) / trainer remains unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not put the pointer back inside the *specified* \(C\). Rating is not a SOTA claim.
 
 ---
 
