@@ -1,16 +1,16 @@
 # Runtime self-improvement: typed-noise hybrid dynamics
 
-**Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. The contribution is the **framework + theory**. Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
+**Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. Dual *implemented* arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. Typed \(\mathrm{Obs}\) is a contribution only after the controller implements it — a harness log, not a slogan in this file. Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
 
-**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that types its own failure and intervenes on \(C\) or on \(f_\theta\). TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that can edit graph \(C\) or rebind a catalog SKU. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
 
-**Thesis (author lock).** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow* decoder pointer (\(f_\theta\) / SKU). They are different coordinates on different clocks. Self-observation types the failure and chooses which coordinate to edit. Two licensed edits: \(I_{\mathrm{loop}}\) mutates \(C\) (same \(S\)); the slow arm gated-rebinds \(S\) (same \(C\)). Wait is the identity. **License for the slow arm is an incomplete episode (hang / no-write / crash), not “a more expensive checkpoint.”** Price is not a coordinate. Completed miss + attractor \(\to I_{\mathrm{loop}}\). Hits wait. Accumulating \(H\) is neither arm.
+**Thesis (author lock).** Write **\(C\) vs SKU vs wait.** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow catalog pointer* (SKU: `PhysicalNode.provider` / `n.model`). Do **not** write the slow factor as \(f_\theta\). We cannot train. Dual implemented arms: \(I_{\mathrm{loop}}\) mutates graph \(C\) (same SKU); \(I_{\mathrm{sku}}\) gated-rebinds the catalog pointer (same \(C\)). Wait is the identity. **License for \(I_{\mathrm{sku}}\) is an incomplete episode (hang / no-write / crash), not price.** Completed miss + attractor \(\to I_{\mathrm{loop}}\). Hits wait. Accumulating \(H\) is neither arm.
 
-Catalog rebind \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) is the *implemented* slow actuator on this stack, because we cannot train. **A cell, not the title claim.** `0813` is one available value of \(S\), not the license. SKU swap alone is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). The gate is eval / first-passage (Definition 5.3), not “0813 exists” (that would be always-mount). Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not title this paper as model routing.
+\(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) is the *stand-in* slow cell on this stack, because \(f_\theta\) / trainer is unimplemented. **A cell, not the contribution.** `0813` is one available SKU, not the license. SKU swap alone is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). The gate is eval / first-passage (Definition 5.3), not “0813 exists” (that would be always-mount). Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not title this paper as model routing. Do not title this paper as async weight updates.
 
-Two clocks (Lemma 7.7): `servingPaused=false`; jump of \(S\) only on gated mount; later serving must use the new \(S\) or there was no jump.
+Two clocks (Lemma 7.7): `servingPaused=false`; jump of the catalog pointer only on gated mount; later serving must use the new SKU or there was no jump.
 
-**What this paper is not.** SOTA on \(\tau^2\). A Pro-vs-Flash leaderboard. Async weight updates / LoRA / spawn-trainer. Mock \(0\to 0.5\to 1.0\) as a result. \(0.7\to 0.9\) in the abstract lead. A routing paper. One idea with two names (`improveLoop` writing a bag that contains both graph and SKU).
+**What this paper is not.** SOTA on \(\tau^2\). A Pro-vs-Flash leaderboard. Async weight updates. LoRA / spawn-trainer / \(I_{\mathrm{weight}}\) as the claim. Mock \(0\to 0.5\to 1.0\) as a result. \(0.7\to 0.9\) in the abstract lead. A routing paper. One idea with two names (`improveLoop` writing a bag that contains both graph and SKU). A FRAMEWORK slogan that “typed Obs” is the contribution before the harness logs it.
 
 ---
 
@@ -39,7 +39,7 @@ is the wrong *primary* language here. The state is not a point on a Riemannian m
 - *Generation SDEs.* [Unraveling Text Generation in LLMs](https://arxiv.org/abs/2408.11863) (arXiv:2408.11863) and [A Stochastic Differential Equation Framework for Multi-Objective LLM Interactions](https://arxiv.org/abs/2510.10739) (arXiv:2510.10739) put drift–diffusion on latent or objective coordinates of *token generation* / iterative prompting. [Language Generation as Optimal Control](https://arxiv.org/abs/2605.14531) (arXiv:2605.14531) treats generation as stochastic control in a latent control space (HJB / flow matching). These do not carry tools, structured memory, or a graph \(C\).
 - *Memory as MDP / Langevin.* SuperLocalMemory V3 (arXiv:2603.14588) writes memory *lifecycle* as Riemannian Langevin + Fokker–Planck. MemCon (arXiv:2607.13591) is a Memory-MDP over retrieve / consolidate / forget. Memento 2 (arXiv:2512.22716) defines an SRDP in which write = policy evaluation and read = policy improvement. Memp (arXiv:2508.06433) stores procedural abstractions. These enlarge the MDP for memory ops; they do not type decoding noise against tool noise against numerics.
 - *Linguistic feedback.* Reflexion (Shinn et al., arXiv:2303.11366) and Self-Refine (Madaan et al., arXiv:2303.17651) update text, not weights. In this language they are particular \(P^{\mathrm{mem}}\) and graph compositions, not a dynamics.
-- *Model routing / cascade.* FrugalGPT, RouteLLM, and OpenRouter fallbacks swap or cascade SKUs. That is a cell we can run (\(I_{\mathrm{sku}}\)). It is not this paper's contribution. The contribution is that \(\mathrm{Obs}\) types the failure and chooses the factor \((C\) vs \(f_\theta)\).
+- *Model routing / cascade.* FrugalGPT, RouteLLM, and OpenRouter fallbacks swap or cascade SKUs. That is a cell we can run (\(I_{\mathrm{sku}}\)). It is not this paper's contribution. Dual implemented arms are \(C\) vs SKU vs wait. Typed \(\mathrm{Obs}\) is a harness log after the controller implements it, not a slogan here.
 - *Classical.* Langevin, Fokker–Planck, Freidlin–Wentzell LDP, MDP/POMDP, Doob \(h\)-transform, Gumbel-max: used below as named tools, not as “the model of an agent.”
 
 ---
@@ -60,7 +60,7 @@ If the model pointer sits *inside* fast \(C\) and both arms are `improveLoop` wr
 | \(M_n\) | \(\mathcal{M}\) | fast | Structured memory: vdom `memoryStore`, traces, persistence. |
 | \(E_n\) | \(\mathcal{E}\) | fast | Environment / tool world. |
 | \(C_n\) | \(\mathcal{C}\) | **fast** | *Graph control*: AgentGraph plus decoding knobs (temperature, constraints, validators, commit gates, mounted capabilities). **Does not contain the decoder pointer.** \(I_{\mathrm{loop}}\) writes this coordinate only. |
-| \(S_n\) | \(\mathcal{S}\) | **slow** | *Decoder pointer*: the bound \(f_\theta\) / SKU (`PhysicalNode.provider` / `n.model`). Frozen on the fast clock. The slow arm gated-rebinds this coordinate only. Price is not a coordinate of \(\mathcal{S}\). `0813` is one available value, not the license. |
+| \(S_n\) | \(\mathcal{S}\) | **slow** | *Catalog pointer* (SKU: `PhysicalNode.provider` / `n.model`). Frozen on the fast clock. \(I_{\mathrm{sku}}\) gated-rebinds this coordinate only. Not \(f_\theta\). Price is not a coordinate of \(\mathcal{S}\). `0813` is one available value, not the license. |
 
 **Definition 1.2 (coarse field).** An optional projection \(z_n = \Pi(X_n)\in\mathbb{R}^d\) (embedding summary, score vector) is a *statistic*, never the true state. Fokker–Planck statements, if any, are about the law of \(z_n\), and only after a mixing hypothesis that must be stated.
 
@@ -70,7 +70,7 @@ If the model pointer sits *inside* fast \(C\) and both arms are `improveLoop` wr
 f_\theta : \mathcal{V}^* \to \mathbb{R}^{|\mathcal{V}|}, \qquad \ell = f_\theta(H)
 \]
 
-is a deterministic logit map for the bound pointer \(S\). Numerical noise may perturb \(\ell\); decoding samples a token (or an action string) from the perturbed logits. \(S\) is constant *inside* a generation and across fast serving steps. A gated rebind is a jump \(S\mapsto S'\) on the slow clock. It does not write \(C\).
+is the logit map of the *currently bound SKU*. We do not train it. Numerical noise may perturb \(\ell\); decoding samples a token (or an action string) from the perturbed logits. The catalog pointer \(S\) is constant *inside* a generation and across fast serving steps. A gated \(I_{\mathrm{sku}}\) mount is a jump \(S\mapsto S'\) on the slow clock. It does not write \(C\). \(f_\theta\) / trainer remains unimplemented.
 
 ---
 
@@ -201,7 +201,7 @@ The *cascade exponent* is the local growth rate of \(\rho_n\) before coupling. A
 
 ## §6 Self-observation and dual intervention
 
-This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is that a vdom agent watches its own path measure and then edits either graph \(C\) or decoder pointer \(S\). Not a trainer. Not a price.
+This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is \(C\) vs SKU vs wait. Not \(f_\theta\). Not a trainer. Not a price. Typed \(\mathrm{Obs}\) counts only after the harness logs it.
 
 **Definition 6.1 (self-observation).** Let \(\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}\) together with first-passage proxies \((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})\) and a typed completion
 
@@ -252,14 +252,14 @@ S_n & \text{otherwise.}
 
 On \(\{T_{\mathrm{adapt}}=n\}\) the gate \(g(S',\mathrm{fixture})\in\{\mathrm{mount},\mathrm{reject}\}\) is empirical first-passage (Definition 5.3), **not** \(\mathbf{1}_{\{S'\text{ exists}\}}\). Reject is the identity on \(S\). Later serving must use \(S'\) or there was no jump.
 
-**Definition 6.4 (dual intervention on \(C\) vs \(S\)).** After \(\mathrm{Obs}\), two licensed non-identity edits:
+**Definition 6.4 (dual implemented arms: \(C\) vs SKU vs wait).** After \(\mathrm{Obs}\), two licensed non-identity edits:
 
-1. **\(I_{\mathrm{loop}}\) writes \(C\).** Same \(S\). Fast clock. License: completed miss + policy / topology attractor.
-2. **Slow arm writes \(S\).** Same \(C\). Gated rebind of the decoder pointer. License: **incomplete episode (hang / no-write / crash).** Not “more expensive checkpoint.” Price is not a coordinate. Available cell on this stack: \(I_{\mathrm{sku}}\), one value `0813`. SKU swap alone is not the contribution (FrugalGPT, RouteLLM, OpenRouter fallbacks).
+1. **\(I_{\mathrm{loop}}\) writes graph \(C\).** Same SKU. Fast clock. License: completed miss + policy / topology attractor.
+2. **\(I_{\mathrm{sku}}\) writes catalog pointer \(S\).** Same \(C\). Gated rebind of `PhysicalNode.provider` / `n.model`. License: **incomplete episode (hang / no-write / crash).** Not price. Not \(f_\theta\). \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. `0813` is one available SKU. SKU swap alone is not the contribution.
 
 Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Failed eval \(\Rightarrow\) no switch.
 
-**Thesis (restated).** \(X=(H,M,E,C,S)\), \(K_{C,S}\). Typed \(\mathrm{Obs}\). Two licensed edits on different clocks. Catalog rebind is the implemented slow actuator, not the title. Not \(\tau^2\) SOTA. Not a routing paper. Not \(0.7\to 0.9\) in the abstract lead.
+**Thesis (restated).** Dual implemented arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer) | wait. \(I_{\mathrm{sku}}\) is the stand-in slow cell, not the contribution. Typed \(\mathrm{Obs}\) is a harness log, not a slogan here. Not async weight updates. Not \(\tau^2\) SOTA. Not \(0.7\to 0.9\) in the abstract lead.
 
 ### Actuators available to (P^{\mathrm{ctrl}}) after Obs
 
@@ -271,7 +271,7 @@ Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Failed eval \(\Ri
 | memory write rules | (often Dirac) (P^{\mathrm{mem}}\); (\mathrm{Obs}\) is one such write |
 | parallel sample + select | nonlinear kernel (\mathrm{select}(A_1,\ldots,A_k)\) |
 | commit gates | optional stopping; freeze a coordinate of (X\) |
-| gated \(f_\theta\) jump (\(I_{\mathrm{sku}}\) on this stack) | *available* slow actuator: catalog rebind of `PhysicalNode.provider` / `n.model`. A cell, not the claim. |
+| catalog rebind (\(I_{\mathrm{sku}}\)) | *stand-in* slow cell: rebind `PhysicalNode.provider` / `n.model`. Not \(f_\theta\). Not the contribution. |
 | capability mount | change available tools / (P^{\mathrm{env}}) action set |
 | graph mutation (scientist) | *fast* (I_{\mathrm{loop}}\): change the composition of (K\) |
 
@@ -386,7 +386,7 @@ The runtime already has `obs.arm`. Hung still defaults to \(I_{\mathrm{loop}}\) 
 
 ### §8.1 Arm choice: decision rule stated; cascade-exponent refinement remains
 
-Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\mathrm{wait\text{-}hit},\,\hat p_{\mathrm{hit}})\). It is not a vibe and it does not delete this problem. Remaining work is to put the cascade exponent \(\lambda\) of \(\rho_n\) (Definition 5.4, Lemma 7.3) *into* \(\delta\): when should local Hamming growth tip a completed miss from \(I_{\mathrm{loop}}\) to the slow \(f_\theta\) actuator? \(f_\theta\) jumped only if serving rebinds. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). SKU swap is not the open problem.
+Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\mathrm{wait\text{-}hit},\,\hat p_{\mathrm{hit}})\). It is not a vibe and it does not delete this problem. Remaining work is to put the cascade exponent \(\lambda\) of \(\rho_n\) (Definition 5.4, Lemma 7.3) *into* \(\delta\): when should local Hamming growth tip a completed miss from \(I_{\mathrm{loop}}\) to \(I_{\mathrm{sku}}\)? The catalog pointer jumped only if serving rebinds. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). SKU swap is not the open problem. Typed \(\mathrm{Obs}\) counts only after the harness logs it.
 
 2. Measure the three channels on a real stack (vLLM / llama.cpp / OpenRouter) with replay.
 3. Estimate cascade exponents on vdom word-reverse vs a tool-using task.
@@ -406,7 +406,7 @@ Interface, not implementation in this repo.
 - `improveLoop` writes \(C\) only. The slow arm gated-rebinds \(S\). They are not two names for one bag.
 - Implement Lemma 7.9: hung / crash / no-write \(\to I_{\mathrm{sku}}\), not a default \(I_{\mathrm{loop}}\) and not “\(I_{\mathrm{loop}}\) until `loopExhausted`”. License is incompleteness. Wait-hit stays the identity on \(C\) and \(S\).
 - Available cell \(I_{\mathrm{sku}}\): `0731` \(\to\) `0813`. A cell, not the title. `servingPaused=false`. Gate is eval / first-passage, not “0813 exists.” Later serving must use 0813 or there was no jump. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not title the runtime as a router.
-- Do not spawn a trainer. That sentence is not the claim. Catalog rebind is the implemented slow actuator.
+- Do not spawn a trainer. \(f_\theta\) / \(I_{\mathrm{weight}}\) is unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell.
 - Expose (\tau_S,\tau_F\) in `runBenchmark` (already has `score`).
 
 The typed kernel in `src/` is the contract these props should satisfy.
@@ -415,17 +415,17 @@ The typed kernel in `src/` is the contract these props should satisfy.
 
 ## §10 Diagnostics (existence and arm choice; not a leaderboard)
 
-The ICLR contribution is the framework + theory: two licensed edits, typed \(\mathrm{Obs}\). \(I_{\mathrm{loop}}\) mutates graph \(C\). \(I_{\mathrm{sku}}\) gated-rebinds decoder pointer \(S\). Catalog rebind is the implemented slow actuator, not the title claim. \(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose a coordinate**. Do not claim SOTA on \(\tau^2\). Do not invent scores. Do not spawn a trainer as the claim. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not treat mock \(0\to 0.5\to 1.0\) as a result. Do not title the paper as model routing. Do not put the model pointer back inside \(C\).
+Dual implemented arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell, not the contribution. Typed \(\mathrm{Obs}\) is a harness log after the controller implements it, not a slogan in this file. \(\tau^2\) and the 0731 rollouts are **diagnostics**. Do not claim SOTA on \(\tau^2\). Do not invent scores. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not treat mock \(0\to 0.5\to 1.0\) as a result. Do not title the paper as model routing or async weight updates. Do not put the catalog pointer back inside \(C\).
 
 **Held-out is the eval.** Airline tasks \(18,20,23,25,30,35,38,42,45,48\) (OpenRouter `deepseek/deepseek-v4-flash-0731`, user+judge same model, 1 trial, max 2 rounds, one policy-checklist \(I_{\mathrm{loop}}\) only). Official DB hash. Audit: no gold reservation ID and no gold action leaked into the live prompt. The checklist was not written for these IDs; method overfit on \(39/41/44\) is why held-out exists. `pHitSequence` \(0.7\to 0.9\). One-shot misses \(23,35,48\) (hits the other 7). Policy-checklist lifts those three and **regresses 18** (\(1\to 0\)). Completion: r0 finished 8 / transfer 2; r1 finished 9 / transfer 1; hung 0, error 0. JSON: `experiments/improve-live-0731-heldout.json` (source: vdom-harness `eval/tau2/improve-live-0731-heldout.json`). Better than this one-shot control on a \(10\times 1\) slice. Not a reliability claim. The loop is real; the content of \(C\) is a static prior, not self-reflection. Discovery slice = test-hacking risk. Held-out = weak generalization, including a regression on a task \(\mathrm{Obs}\) marked `wait`. Not SOTA, not a \(\tau^2\) win. See `paper/ANALYSIS.md` §0c.
 
 **Replication (overfit slice, secondary).** \(39/41/44\times 3\) trials: \(\mathrm{pass}^1\) \(0.333\to 0.556\); \(\mathrm{pass}^2\) \(0.333\to 0.444\); \(\mathrm{pass}^3\) \(0.333\to 0.333\) (flat). Task 39: \(0/3\to 2/3\); 44: \(0/3\to 0/3\); 41: \(3/3\to 3/3\). JSON: `experiments/improve-live-0731-replication.json`. The earlier \(0.333\to 0.667\) was \(n=1\) on this same slice — do not lead with \(0.667\). Older licensing traces on that slice: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\); first policy draft \(0.333\to 0\). Remaining incomplete episodes license \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813). Not a Pro-vs-Flash leaderboard.
 
-**Self-obs \(I_{\mathrm{loop}}\) on \(39+44\) (diagnostic; do not lead).** Live 0731, 2026-08-19, tasks \(39+44\), 1 trial, max-rounds 1, `selfObsPath=self`. Round 0: \(p_{\mathrm{hit}}=0.5\) (39 miss, Obs \(I_{\mathrm{loop}}\); 44 hit, Obs `wait`). Model returned valid \(I_{\mathrm{loop}}\) JSON and mounted a global `cancel_policy` (wrong attractor: it thought 44 / sophia needed a cancel). Round 1: \(p_{\mathrm{hit}}=0.0\) (39 still miss, same `MSJ4OA`; 44 regressed \(1\to 0\), `KC18K6` `action_match` false). Mid-turn `get_agent_graph` / `set_agent_graph`: zero calls. `servingPaused` false. Not a slow \(f_\theta\) jump (episodes completed with writes). Same shape as held-out task 18: Obs said `wait` on a hit; a global \(I_{\mathrm{loop}}\) still changed \(C\) for the whole slice. That unscoped apply is illegal — evidence the loop ran and Obs chose \(I_{\mathrm{loop}}\), not a SOTA miss. JSON: `experiments/improve-live-0731-self-3944.json` (source: vdom-harness `eval/tau2/improve-live-0731-self-3944.json`).
+**Self-obs \(I_{\mathrm{loop}}\) on \(39+44\) (diagnostic; do not lead).** Live 0731, 2026-08-19, tasks \(39+44\), 1 trial, max-rounds 1, `selfObsPath=self`. Round 0: \(p_{\mathrm{hit}}=0.5\) (39 miss, Obs \(I_{\mathrm{loop}}\); 44 hit, Obs `wait`). Model returned valid \(I_{\mathrm{loop}}\) JSON and mounted a global `cancel_policy` (wrong attractor: it thought 44 / sophia needed a cancel). Round 1: \(p_{\mathrm{hit}}=0.0\) (39 still miss, same `MSJ4OA`; 44 regressed \(1\to 0\), `KC18K6` `action_match` false). Mid-turn `get_agent_graph` / `set_agent_graph`: zero calls. `servingPaused` false. Not an \(I_{\mathrm{sku}}\) jump (episodes completed with writes). Same shape as held-out task 18: Obs said `wait` on a hit; a global \(I_{\mathrm{loop}}\) still changed \(C\) for the whole slice. That unscoped apply is illegal — evidence the loop ran and Obs chose \(I_{\mathrm{loop}}\), not a SOTA miss. JSON: `experiments/improve-live-0731-self-3944.json` (source: vdom-harness `eval/tau2/improve-live-0731-self-3944.json`).
 
 **Runtime fix (already merged).** [vdom-harness PR #10](https://github.com/keejkrej/vdom-harness/pull/10) (2026-08-19): “Gate \(I_{\mathrm{loop}}\): wait-hit tasks keep \(C_0\)”. Mixed batch: wait+hit served on \(C_0\), miss / \(I_{\mathrm{loop}}\) served on \(C_1\). Logged as `applyScope {waitKept, looped}`. Host fallback `applyILoop` uses the same gate. Mock \(0\to 0.5\to 1.0\) still holds. That gate is clause 1 of Lemma 7.9.
 
-**Post-gate hang licenses the slow \(f_\theta\) actuator (evidence for the rule; do not lead).** Live 0731, 2026-08-20, after the wait-hit gate, same \(39+44\), 1 trial, max-rounds 1. Round 0: 39 completed-miss (Obs \(I_{\mathrm{loop}}\)); 44 hung (`taskPHit` null, skipped `44:t0:timeout`, reward null, nmsg 0 — not a measured 0). Runtime still emitted \(I_{\mathrm{loop}}\)+hung unless `loopExhausted` (type error vs Lemma 7.9 clause 2; that falsifies the split if left in place). `applyScope waitKept=[] looped=[39,44]`: no wait-hit, so the gate behaved. Round 1: 44 completed (hang \(\to\) finished miss) under a cancel attractor. The hang is an incomplete episode: \(I_{\mathrm{loop}}\) on empty traces is unidentified; the available cell is \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) because we cannot train. That is not the paper's contribution. `servingPaused=false`. If later serving does not use 0813, there was no jump. Do not invent post-mount numbers. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). JSON: `experiments/improve-live-0731-self-3944-postgate.json`. See `paper/NOTES_ARM_CHOICE.md`.
+**Post-gate hang licenses \(I_{\mathrm{sku}}\) (evidence for the rule; do not lead).** Live 0731, 2026-08-20, after the wait-hit gate, same \(39+44\), 1 trial, max-rounds 1. Round 0: 39 completed-miss (Obs \(I_{\mathrm{loop}}\)); 44 hung (`taskPHit` null, skipped `44:t0:timeout`, reward null, nmsg 0 — not a measured 0). Runtime still emitted \(I_{\mathrm{loop}}\)+hung unless `loopExhausted` (type error vs Lemma 7.9 clause 2; that falsifies the split if left in place). `applyScope waitKept=[] looped=[39,44]`: no wait-hit, so the gate behaved. Round 1: 44 completed (hang \(\to\) finished miss) under a cancel attractor. The hang is an incomplete episode: \(I_{\mathrm{loop}}\) on empty traces is unidentified; the available cell is \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) because we cannot train. That is not the paper's contribution. `servingPaused=false`. If later serving does not use 0813, there was no jump. Do not invent post-mount numbers. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). JSON: `experiments/improve-live-0731-self-3944-postgate.json`. See `paper/NOTES_ARM_CHOICE.md`.
 
 Mock closed loop \(0\to 0.5\to 1.0\) on official `update_task_1` / `impossible_task_1` is a **protocol unit test**, not an ICLR result.
 

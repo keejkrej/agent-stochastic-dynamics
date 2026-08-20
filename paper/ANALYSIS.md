@@ -1,6 +1,6 @@
 # Diagnostics: existence and arm choice
 
-**Thesis (locked; ICLR 2027).** The paper is a **runtime self-improvement framework with theoretical support**, not a \(\tau^2\) SOTA paper. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. Held-out airline is the eval: one policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. **Better than this one-shot control on a \(10\times 1\) slice. Not a reliability claim. The loop is real (\(\mathrm{Obs}\) fired, \(C\) mutated, serving did not pause). The *content* of \(C\) is not self-reflection — it is a static researcher-authored prior. Discovery slice = test-hacking risk. Held-out = weak generalization of that prior, including a regression on a task \(\mathrm{Obs}\) had marked `wait`.** That is existence, not SOTA, not reliability, and not a \(\tau^2\) win. A 3-trial replication on the overfit slice is secondary (\(\mathrm{pass}^3\) stays \(0.333\)). The earlier \(0.333\to 0.667\) was \(n=1\) on that slice — do not lead with it. Remaining transfers license \(I_{\mathrm{weight}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(\mathrm{pass}^k=1\) is a wait fixed point. `FakeTrainer` is a protocol demo. See `paper/iclr2027/main.tex` and `paper/NOTES_VENUE.md`. See §0c for the locked interpretation of \(0.7\to 0.9\).
+**Thesis (locked; ICLR 2027).** Write **\(C\) vs SKU vs wait**. Dual implemented arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. Do not write the slow factor as \(f_\theta\). We cannot train. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell, not the contribution. License for \(I_{\mathrm{sku}}\) is an incomplete episode, not price. Typed \(\mathrm{Obs}\) is a harness log after the controller implements it, not a FRAMEWORK slogan. Not async weight updates. Not a \(\tau^2\) SOTA paper. Do not lead with \(0.7\to 0.9\). Remaining incomplete episodes license \(I_{\mathrm{sku}}\). The mock \(0\to 0.5\to 1.0\) is a protocol unit test. See `paper/FRAMEWORK.md`. See §0c for the locked interpretation of the held-out diagnostic.
 
 **What these notes record.** Existence of the loop and arm choice, not a one-shot before/after and not a leaderboard:
 
@@ -8,11 +8,11 @@
 \text{self-observe}\;\to\;\text{self-improve}\;\to\;\text{self-observe}\;\to\;\cdots
 \]
 
-Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{weight}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{weight}}$ jumps live on the slow clock. $\mathrm{wait}$ is a fixed point. $\mathrm{pass}^k(t)$ along the loop is a diagnostic that an arm fired, not a leaderboard. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C)$, $K_C$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class.
+Iterate $P^{\mathrm{fast}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast clock. After $I_{\mathrm{loop}}$ or a gated $I_{\mathrm{sku}}$ mount, the agent observes the *new* traces and may intervene again. $I_{\mathrm{sku}}$ rebinds the catalog pointer on the slow clock. $\mathrm{wait}$ is a fixed point. $\mathrm{pass}^k(t)$ along the loop is a diagnostic that an arm fired, not a leaderboard. A static one-shot $\mathrm{pass}^k$, a toy $p_{\mathrm{hit}}$, or a single before/after without the next $\mathrm{Obs}$ is not the contribution. Theory (hybrid $X=(H,M,E,C,S)$, $K_{C,S}$, three channels, two clocks, first-passage $\mathrm{pass}^k$, lemmas) is first-class. $S$ is the catalog pointer, not $f_\theta$.
 
 **Status.** Live airline diagnostics exist. **Held-out is the eval.** Official airline tasks $18,20,23,25,30,35,38,42,45,48$, OpenRouter `deepseek/deepseek-v4-flash-0731`, $k=1$, max 2 rounds, user+judge pinned to the same model, one policy-checklist $I_{\mathrm{loop}}$ only. Official DB hash. Audit: no gold-ID or gold-action leak into the live prompt. Checklist was not written for these IDs. $p_{\mathrm{hit}}$ $0.7\to 0.9$: one-shot misses $23,35,48$ (hits the other 7); policy-checklist lifts those three and **regresses 18** ($1\to 0$). Completion: r0 finished 8 / transfer 2; r1 finished 9 / transfer 1; hung 0, error 0. JSON: `experiments/improve-live-0731-heldout.json` (source: vdom-harness `eval/tau2/improve-live-0731-heldout.json`). Better than this one-shot control on the $10\times 1$ slice. Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). The loop is real; the checklist text is a static prior (see §0c). Not SOTA, not a $\tau^2$ win. A later self-obs run on $39+44$ ($0.5\to 0.0$; §0a2) is another diagnostic that the loop ran and that an unscoped apply is illegal — do not lead with it.
 
-**Replication (overfit slice, secondary).** $39/41/44\times 3$ trials: $\mathrm{pass}^1$ $0.333\to 0.556$; $\mathrm{pass}^2$ $0.333\to 0.444$; $\mathrm{pass}^3$ $0.333\to 0.333$ (flat). Task 39: $0/3\to 2/3$; 44: $0/3\to 0/3$; 41: $3/3\to 3/3$. JSON: `experiments/improve-live-0731-replication.json`. The earlier $0.333\to 0.667$ was $n=1$ on this same slice — do not lead with $0.667$. Older licensing traces: generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; first policy draft $0.333\to 0$. Remaining incomplete episodes license $I_{\mathrm{weight}}$ as a catalog request (0731 $\to$ 0813), not fine-tuning. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
+**Replication (overfit slice, secondary).** $39/41/44\times 3$ trials: $\mathrm{pass}^1$ $0.333\to 0.556$; $\mathrm{pass}^2$ $0.333\to 0.444$; $\mathrm{pass}^3$ $0.333\to 0.333$ (flat). Task 39: $0/3\to 2/3$; 44: $0/3\to 0/3$; 41: $3/3\to 3/3$. JSON: `experiments/improve-live-0731-replication.json`. The earlier $0.333\to 0.667$ was $n=1$ on this same slice — do not lead with $0.667$. Older licensing traces: generic $I_{\mathrm{loop}}$ $0.333\to 0\to 0.333$; first policy draft $0.333\to 0$. Remaining incomplete episodes license $I_{\mathrm{sku}}$ as a catalog pointer rebind (0731 $\to$ 0813), not a trainer. Protocol: [vdom-harness](https://github.com/keejkrej/vdom-harness) `python -m tau2_vdom.improve`. Other numbers below are real and are *not* a $\tau^2$ result:
 
 - **Wait fixed point (not self-improvement).** `experiments/tau2-retail-0731.json`: official retail $5\times 4$, `technique: one-shot`, $\mathrm{pass}^k=1.0$. $\mathrm{Obs}$ should `wait`.
 - **Topology-attractor diagnostic (licenses $I_{\mathrm{loop}}$).** `experiments/live-0731.json` (2026-08-19 09:25 CEST): retrieval $12/12$, sequential toys $0/12$, $\tau$-invariant loops. Toy word-reverse is not the eval.
@@ -23,7 +23,7 @@ No number below is invented.
 
 - `wait` on wait-hit (identity on $C$);
 - $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph, same SKU;
-- slow $f_\theta$ actuator on an *incomplete* episode (hang / crash / no-write). Available cell: $I_{\mathrm{sku}}$ ($0731\to 0813$) because we cannot train. Serving keeps current $f_\theta$ (`servingPaused=false`). Jump iff later serving uses the new pointer. A cell, not the claim. Do not sell $p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
+- $I_{\mathrm{sku}}$ on an *incomplete* episode (hang / crash / no-write). Stand-in catalog pointer rebind ($0731\to 0813$). Not $f_\theta$. License is incompleteness, not price. Serving keeps the current SKU (`servingPaused=false`). Jump iff later serving uses the new pointer. A cell, not the contribution. Do not sell $p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
 
 Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 
@@ -36,7 +36,7 @@ Implementation: https://github.com/keejkrej/vdom-harness (`src/improve.ts` `impr
 1. Start with a naive graph (`oneShotGraph` / `--technique one-shot`) as $C_0$.
 2. **Cycle** $t=0,1,\ldots,T$ on a domain slice that is **not** already saturated (not the 5-task retail that hits $1.0$). Same task ids every cycle. Record $\mathrm{pass}^k(t)$.
 3. $\mathrm{Obs}(\mathrm{traces}_t)$: repeat rate, timeout, zero progress, tool failures, knowledge miss.
-4. $P^{\mathrm{ctrl}}$: $I_{\mathrm{loop}}$ (critic / refine / validator / policy-checklist) or $I_{\mathrm{weight}}$ (spawn; later mount if gate passes) or `wait`. Serving does not stop.
+4. $P^{\mathrm{fast}}$: $I_{\mathrm{loop}}$ (critic / refine / validator / policy-checklist) or $I_{\mathrm{sku}}$ (catalog request; later mount if gate passes) or `wait`. Serving does not stop. Not a trainer.
 5. **Do not stop after one intervention.** Serve under $C_{t+1}$. $\mathrm{Obs}$ reads the new traces. Repeat from (2) until `wait` or $t=T$.
 
 ```
@@ -45,7 +45,7 @@ PYTHONPATH=python python3 -m tau2_vdom \
   --domain <airline|telecom|larger-retail> \
   --task-ids <fixed ids> --num-trials k
 
-# Obs(traces_t) -> improveLoop (topology = I_loop; adapter = I_weight, gated).
+# Obs(traces_t) -> improveLoop (topology = I_loop; catalog pointer = I_sku, gated).
 # Then cycle t+1 on the SAME task ids. Stop only on wait or t = T.
 ```
 
@@ -66,7 +66,7 @@ Per-task (task IDs only; gold reservation IDs are not listed):
 - Policy-checklist lifts $23$, $35$, $48$.
 - Regression on $18$: $1\to 0$. The other six one-shot hits stay hits.
 
-Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). Benchmaxxing does not transfer: a mount fitted to $39/41/44$ also broke a held-out hit. The loop ran. The *content* of $C$ is a static prior — see §0c. Not SOTA, not a $\tau^2$ win. Remaining incomplete episodes license $I_{\mathrm{weight}}$ as a catalog request (0731 $\to$ 0813), not fine-tuning. Cite the same numbers in `paper/iclr2027/main.tex`. Prefer `paper/FRAMEWORK.md`.
+Do not treat $0.7\to 0.9$ as $k>1$ reliability (still 1 trial). Benchmaxxing does not transfer: a mount fitted to $39/41/44$ also broke a held-out hit. The loop ran. The *content* of $C$ is a static prior — see §0c. Not SOTA, not a $\tau^2$ win. Remaining incomplete episodes license $I_{\mathrm{sku}}$ as a catalog pointer rebind (0731 $\to$ 0813), not a trainer. Cite the same numbers in `paper/iclr2027/main.tex`. Prefer `paper/FRAMEWORK.md`.
 
 ### 0a. Replication on the overfit slice (secondary; do not lead)
 
@@ -85,7 +85,7 @@ Older generic ladder that licensed the typed arm (same slice, $k=1$): `experimen
 
 Not the eval. Not a failed SOTA attempt. Do not lead with $0.5\to 0.0$. Keep §0c as the locked reading of the held-out $0.7\to 0.9$.
 
-Live 0731, 2026-08-19, airline $39+44$, 1 trial, max-rounds 1, `selfObsPath=self`. JSON: `experiments/improve-live-0731-self-3944.json` (source: vdom-harness `eval/tau2/improve-live-0731-self-3944.json`). `servingPaused` false. Mid-turn `get_agent_graph` / `set_agent_graph`: **zero** calls. Both episodes completed with writes: **not** $I_{\mathrm{weight}}$.
+Live 0731, 2026-08-19, airline $39+44$, 1 trial, max-rounds 1, `selfObsPath=self`. JSON: `experiments/improve-live-0731-self-3944.json` (source: vdom-harness `eval/tau2/improve-live-0731-self-3944.json`). `servingPaused` false. Mid-turn `get_agent_graph` / `set_agent_graph`: **zero** calls. Both episodes completed with writes: **not** $I_{\mathrm{sku}}$.
 
 | Cycle $t$ | $\mathrm{Obs}(\mathrm{traces}_t)$ | $P^{\mathrm{ctrl}}$ | $\mathrm{pass}^1(t)$ |
 | --- | --- | --- | --- |
@@ -101,7 +101,7 @@ Same shape as held-out task 18 (§0c): $\mathrm{Obs}$ said `wait` on a hit; a gl
 
 **Runtime fix (already merged).** [vdom-harness PR #10](https://github.com/keejkrej/vdom-harness/pull/10), merged 2026-08-19: “Gate $I_{\mathrm{loop}}$: wait-hit tasks keep $C_0$”. Mixed batch: wait+hit served on $C_0$, miss / $I_{\mathrm{loop}}$ served on $C_1$. Logged as `applyScope {waitKept, looped}`. Host fallback `applyILoop` uses the same gate. Mock $0\to 0.5\to 1.0$ still holds. **No new live 0731 numbers after the gate. Do not invent any.**
 
-Still missing: serving mid-turn get/set was never called; 39’s remaining miss (`MSJ4OA`) is not this PR; $I_{\mathrm{weight}}$ is not licensed (episodes completed).
+Still missing: serving mid-turn get/set was never called; 39’s remaining miss (`MSJ4OA`) is not this PR; $I_{\mathrm{sku}}$ is not licensed (episodes completed).
 
 ---
 
@@ -300,7 +300,7 @@ Intervention is $I_{\mathrm{loop}}$: a validator that forbids the last failed ac
 
 ### Retrieval is not the weight arm
 
-Retrieval hits because the model selects `search:iclr` (correct tool; the snippet contains “founded in 2013”, which *is* the success predicate) or, once, `answer:2013` (parametric). $I_{\mathrm{weight}}$ is **not** indicated. A failure of the form “I don’t know” / empty retrieval would be the weight arm.
+Retrieval hits because the model selects `search:iclr` (correct tool; the snippet contains “founded in 2013”, which *is* the success predicate) or, once, `answer:2013` (parametric). $I_{\mathrm{sku}}$ is **not** indicated. A hang / no-write / crash would license the catalog-pointer arm.
 
 Same $f_\theta$ succeeds at retrieval and fails at sequential tools. That is the opposite of “the model is bad.”
 
@@ -321,7 +321,7 @@ One memory bit (lesson / hint / retrieved fact) is a $P^{\mathrm{mem}}$ interven
 
 A loop-side memory write *sometimes* leaves the attractor. Temperature never does (un-split $p_{\mathrm{hit}}$ is unchanged). That is why $P^{\mathrm{ctrl}}$ picks $I_{\mathrm{loop}}$ first.
 
-The same bit does not always suffice: word-reverse still fails 4/6 with the lesson; calculator hint fails 4/6 at $\tau=0$ and 6/6 at $\tau=0.7$. When loop mutation saturates, spawn the trainer ($I_{\mathrm{weight}}$), keep serving on the old $f_\theta$, mount only if $\hat p_{\mathrm{hit}}$ on a fixture (and, when present, $\mathrm{pass}^k$ on $\tau^2$) clears the gate.
+The same bit does not always suffice: word-reverse still fails 4/6 with the lesson; calculator hint fails 4/6 at $\tau=0$ and 6/6 at $\tau=0.7$. When loop mutation saturates, license $I_{\mathrm{sku}}$ (catalog pointer), keep serving on the current SKU, mount only if $\hat p_{\mathrm{hit}}$ on a fixture (and, when present, $\mathrm{pass}^k$ on $\tau^2$) clears the gate. Not a trainer.
 
 ---
 
@@ -337,11 +337,11 @@ The same bit does not always suffice: word-reverse still fails 4/6 with the less
 
 Not emitted on this bundle:
 
-- **`I_weight` / `spawn_trainer`.** No “I don’t know”, no empty search, no parametric miss. Same $f_\theta$ already hits retrieval.
+- **`I_sku` / `spawn_trainer`.** No incomplete episode and no parametric miss. Same SKU already hits retrieval. `spawn_trainer` is unimplemented.
 - **`mount_adapter`.** No ready artifact, and the eval gate would be first-passage on a fixture (toys here; $\tau^2$ $\mathrm{pass}^k$ when that eval is wired). Spawn $\neq$ mount.
 - **`rollback`.** No mounted adapter.
 
-Backup rule, not used on these 72 traces: if an $I_{\mathrm{loop}}$ mutation is applied and $\hat p_{\mathrm{hit}}$ stays 0 (the coupling already shows 4/6–6/6 residual misses), *then* spawn the trainer on `(add → mul)` / `(reverse_entire ↛ reverse_each_word)` traces. Serving does not stop.
+Backup rule, not used on these 72 traces: if an $I_{\mathrm{loop}}$ mutation is applied and $\hat p_{\mathrm{hit}}$ stays 0 (the coupling already shows 4/6–6/6 residual misses), *then* license $I_{\mathrm{sku}}$ on `(add → mul)` / `(reverse_entire ↛ reverse_each_word)` traces. Serving does not stop. Not a trainer.
 
 ---
 
@@ -351,7 +351,7 @@ Three facts, all from the same $f_\theta$:
 
 1. **Not “the model is bad.”** Retrieval is 12/12 at both temperatures. Sequential-tool toys are 0/12. The logit map can hit $S$; the *composition* of $K$ cannot leave $\{\texttt{reverse\_entire}\}$ or $\{\texttt{add}\}$.
 2. **Not sampling.** $\tau=0$ is already Dirac-ish and already fails; $\tau=0.7$ does not change $p_{\mathrm{hit}}$ on the failures. Greedy collapse: residual randomness is a policy loop (env is deterministic; `num` is off).
-3. **Therefore $P^{\mathrm{ctrl}}$ picks $I_{\mathrm{loop}}$ first.** $\mathrm{Obs}$ sees repeat count, timeout, zero progress. A validator / refine topology / consume-$M$ rule is a graph mutation. $I_{\mathrm{weight}}$ is the async backup if that mutation saturates (coupling: the one-bit lesson/hint is not enough on every seed). Mount stays gated (spawn $\neq$ mount).
+3. **Therefore $P^{\mathrm{fast}}$ picks $I_{\mathrm{loop}}$ first.** $\mathrm{Obs}$ sees repeat count, timeout, zero progress. A validator / refine topology / consume-$M$ rule is a graph mutation. $I_{\mathrm{sku}}$ is the stand-in slow cell if that mutation saturates (coupling: the one-bit lesson/hint is not enough on every seed). Mount stays gated (request $\neq$ rebind). Not a trainer.
 
 The $N=2$ probe that hit everything was a fluke. $N=12$ is the measurement. The 0/12 *licenses* the first arm. After that $I_{\mathrm{loop}}$, $\mathrm{Obs}$ must read the new traces — that second look is the closed loop. The 0/12 alone is not $\mathrm{pass}^k(t)$.
 
@@ -373,7 +373,7 @@ They are not $\tau^2$-bench. They are not self-improvement at runtime. They are 
 \mathrm{pass}^k \;=\; \mathbb{P}\big(\tau_S^{(1)}<\tau_F^{(1)},\,\ldots,\,\tau_S^{(k)}<\tau_F^{(k)}\big).
 \]
 
-Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{weight}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
+Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$ (best of $k$). A flaky loop that hits once in $k$ trials has large $\mathrm{pass}@k$ and vanishing $\mathrm{pass}^k$. The eval gate for $I_{\mathrm{sku}}$ should read $\mathrm{pass}^k$, not a single lucky rollout — the $N=2$ fluke is exactly why.
 
 **The paper contribution is the framework + theory**, not a static $\mathrm{pass}^k$ and not a $\tau^2$ win. See §0 and §0c. The 5×4 retail $1.0$ is a ceiling / `wait` fixed point (§0b). Held-out airline is the eval: $0.7\to 0.9$ at $k=1$, including a regression --- better than this one-shot control, not a reliability claim, not self-reflection of the checklist text. The 3-task $39/41/44$ slice is secondary ($\mathrm{pass}^3$ stays $0.333$; the earlier $0.333\to 0.667$ was $n=1$). Self-obs $39+44$ $0.5\to 0.0$ (§0a2) is another diagnostic (loop ran; unscoped apply illegal); do not lead with it. We still do not invent a larger $\tau^2$ table and we do not claim SOTA or reliability.
 
@@ -381,4 +381,4 @@ Under independence this is $(p_{\mathrm{hit}})^k$. It is *not* $\mathrm{pass}@k$
 
 ## 11. One-paragraph claim (for the paper)
 
-The paper is a runtime self-improvement framework: $X=(H,M,E,C)$, $K_C$, three channels, $\mathrm{Obs}$ (traces + first-passage + hung/transfer/crash), $I_{\mathrm{loop}}$ / $I_{\mathrm{weight}}$ on two clocks. Arm choice: $I_{\mathrm{loop}}$ for topology / policy attractors; $I_{\mathrm{weight}}$ when the model does not complete tasks. Held-out airline (checklist not written for these IDs) on 0731: one policy-checklist $I_{\mathrm{loop}}$ moved $p_{\mathrm{hit}}$ $0.7\to 0.9$ at $k=1$, lifting $23,35,48$ and regressing $18$. Better than the one-shot control on this $10\times 1$ slice. Not a reliability claim. The loop is real ($\mathrm{Obs}$ fired, $C$ mutated, serving did not pause). The *content* of $C$ is not self-reflection: $\mathrm{Obs}$ selected a canned node we authored after reading $39/44$ gold. Discovery slice = test-hacking risk. Held-out = weak generalization of that prior, including a regression on a task $\mathrm{Obs}$ had marked `wait`. Not SOTA, not a $\tau^2$ win (vdom-harness `python -m tau2_vdom.improve`). Replication on the overfit slice is secondary ($\mathrm{pass}^3$ stays $0.333$). A later self-obs run on $39+44$ ($0.5\to 0.0$) is the same diagnostic shape: the loop ran, $\mathrm{Obs}$ chose $I_{\mathrm{loop}}$ on the self path, and an unscoped global $C$ change onto a wait-hit is an illegal apply --- not a SOTA miss. Apply is now scoped (wait-hit keeps $C_0$; vdom-harness PR #10). Remaining transfers license $I_{\mathrm{weight}}$. On 144 live rollouts of one serving model, retrieval hits (12/12, $\tau_S=1$) while the sequential-tool *diagnostics* sit in temperature-invariant attractors (word-reverse and calculator 0/12 at $\tau=0$ and at $\tau=0.7$). That licenses $I_{\mathrm{loop}}$ on those fixtures. A five-task retail one-shot already saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point, not self-improvement. $I_{\mathrm{weight}}$ is protocol + `FakeTrainer` stub until a real trainer exists.
+Write $C$ vs SKU vs wait. Dual implemented arms: $I_{\mathrm{loop}}$ (graph $C$) | $I_{\mathrm{sku}}$ (catalog pointer). Wait is the identity. Do not write the slow factor as $f_\theta$. We cannot train. $f_\theta$ / trainer / $I_{\mathrm{weight}}$ is unimplemented. $I_{\mathrm{sku}}$ is the stand-in slow cell, not the contribution. License for $I_{\mathrm{sku}}$ is an incomplete episode, not price. Typed $\mathrm{Obs}$ is a harness log after the controller implements it, not a FRAMEWORK slogan. Not async weight updates. Held-out airline is a diagnostic, not a lead: one policy-checklist $I_{\mathrm{loop}}$ moved $C$ ($0.7\to 0.9$ at $k=1$), including a regression. Remaining incomplete episodes license $I_{\mathrm{sku}}$. A five-task retail one-shot saturates at $\mathrm{pass}^k=1.0$ — `wait`, a fixed point. See `paper/FRAMEWORK.md`.

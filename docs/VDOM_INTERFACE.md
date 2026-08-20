@@ -6,7 +6,7 @@ Accompanying implementation (submitted with the paper, not a side project, not r
 
 Do not clone. Link only. After PR #2 (model bind) and PR #3 (improveLoop).
 
-The runtime is a self-observing agent that reengineers its loop and/or dispatches async weight updates. Papers, blogs, GitHub, X, and other agents are inputs to that agent, not the product.
+The runtime is a self-observing agent that can mutate graph \(C\) or rebind a catalog SKU. Dual implemented arms: \(I_{\mathrm{loop}}\) | \(I_{\mathrm{sku}}\) | wait. \(f_\theta\) / trainer is unimplemented. Not async weight updates. Papers, blogs, GitHub, X, and other agents are inputs to that agent, not the product.
 
 ## State
 
@@ -15,7 +15,8 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | H | messages built in src/runtime.ts (system + user + traces) |
 | M | memoryStore in src/runtime.ts; Trace[] on PhysicalNode |
 | E | tools / capability runners; simulated or live |
-| C | AgentGraph + node props (model, capabilities, status, adapterRef) |
+| C | AgentGraph + decoding knobs (capabilities, status). Not the catalog pointer. |
+| S (SKU) | PhysicalNode.provider / n.model. Frozen on the fast clock. |
 | Obs(traces, first-passage, completion) | traces + runBenchmark.score + hung / transfer / crash; first-class memory write |
 | z = Pi(X) | optional embedding; not the state |
 
@@ -36,7 +37,7 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 | Arm | vdom | License |
 | --- | --- | --- |
 | I_loop | scientist emits AgentGraph; reconcile mutates composition of K; same SKU; serving does not pause | completed miss with a topology / policy attractor (Lemma 7.9) |
-| I_sku (available f_θ cell) | catalog rebind because we cannot train; serving keeps current f_θ (`servingPaused=false`); gated mount rebinds PhysicalNode.provider / n.model | incomplete (hang / crash / no-write). A cell, not the claim. SKU swap alone is not novel. Do not sell p_hit(0813)−p_hit(0731). |
+| I_sku (catalog pointer) | stand-in slow cell: catalog rebind; serving keeps current SKU (`servingPaused=false`); gated mount rebinds PhysicalNode.provider / n.model. Not f_θ. | incomplete (hang / crash / no-write), not price. A cell, not the contribution. SKU swap alone is not novel. Do not sell p_hit(0813)−p_hit(0731). |
 | sku mount | lifecycle.ts gateAdapter; rebind PhysicalNode.provider / n.model | eval gate passes (Lemma 7.7, 7.8) |
 | spawn_trainer | FakeTrainer | related work / unimplemented future, not the claim |
 | rollback | unmountAdapterOnFailure; unmount = rollback | post-mount regression |

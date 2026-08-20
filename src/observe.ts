@@ -1,11 +1,10 @@
 /**
- * Self-observation and two licensed edits on different coordinates.
- *
- *   I_loop mutates graph C (same S).
- *   I_sku gated-rebinds decoder pointer S (same C).
- *   License for the slow arm is an incomplete episode, not price.
- *   Catalog rebind 0731→0813 is the implemented actuator, not the claim.
- *   spawn_trainer writes neither coordinate.
+ * Dual implemented arms: I_loop (graph C) | I_sku (catalog pointer) | wait.
+ * Do not write the slow factor as f_θ. We cannot train.
+ * f_θ / trainer / I_weight is unimplemented.
+ * I_sku is the stand-in slow cell, not the contribution.
+ * License for I_sku is an incomplete episode, not price.
+ * Typed Obs is a harness log after the controller implements it.
  *
  * Typed rule: paper/FRAMEWORK.md Lemma 7.9
  */
@@ -45,7 +44,7 @@ export type ObsDecisionIn = {
 
 export type LicensedArm = "wait" | "I_loop" | "I_sku";
 
-/** Available f_θ cell on this stack (not the claim): catalog rebind because we cannot train. */
+/** Stand-in slow cell on this stack (not the contribution): catalog pointer rebind. */
 export const SKU_CELL = {
   from: "deepseek/deepseek-v4-flash-0731",
   to: "deepseek/deepseek-v4-pro-0813",
@@ -149,14 +148,14 @@ export function observe(
     critique = "path measure hits S; wait";
   } else if (typed === "I_sku" && completion === "incomplete") {
     critique =
-      "incomplete episode; slow f_θ actuator I_sku 0731→0813 (cell); servingPaused=false; I_loop on empty traces unidentified";
+      "incomplete episode; I_sku 0731→0813 (catalog pointer, cell); servingPaused=false; I_loop on empty traces unidentified";
   } else if (typed === "I_loop") {
     critique = "metastable loop; I_loop: forbid last failed action / Self-Refine; loop mutation";
   } else if (knowledgeMiss || typed === "I_sku") {
-    critique = "knowledge miss or unidentified C-failure; slow f_θ actuator I_sku 0731→0813 (cell)";
+    critique = "knowledge miss or unidentified C-failure; I_sku 0731→0813 (catalog pointer, cell)";
     arm = "I_sku";
   } else if (lastActions.includes("reverse_entire") || lastActions.includes("answer:10")) {
-    critique = "fixture miss; I_loop graph mutation (same f_θ)";
+    critique = "fixture miss; I_loop graph mutation (same SKU)";
     arm = "I_loop";
   } else {
     critique = "fixture miss; inspect cascade / tools";
