@@ -6,7 +6,7 @@
 
 **Motivation.** Benchmaxxing a static kernel on a public leaderboard does not transfer to real use or private datasets. After deployment the agent must change \(C\) or \(\theta\). \(\tau^2\) diagnoses that the loop ran; it is not a bench to max.
 
-**Thesis (locked).** An LLM agent is a **controlled hybrid Markov process**. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env). Self-observation \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\). Two licensed interventions: \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) and serving does not pause; \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap while serving continues on the old weights. Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology / policy attractor; \(I_{\mathrm{weight}}\) when the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists). \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. They are not SOTA, not saturation, and not “we improve \(\tau^2\) airline.” The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point.
+**Thesis (locked).** An LLM agent is a **controlled hybrid Markov process**. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env). Self-observation \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\). Two licensed interventions: \(I_{\mathrm{loop}}\) mutates the AgentGraph / \(C\) and serving does not pause; \(I_{\mathrm{weight}}\) is an async trainer on a slow clock with a gated \(\theta\) swap while serving continues on the old weights. Arm choice (Lemma 7.9): \(I_{\mathrm{loop}}\) when a *completed* miss is a topology / policy attractor; \(I_{\mathrm{weight}}\) when the episode is incomplete or the miss is not an identified failure of \(C\). Wait is the identity on \(C\). Extra \(H\) is not an arm. \(\tau^2\) and the 0731 rollouts diagnose that the loop ran and that \(\mathrm{Obs}\) chose an arm. They are not SOTA, not saturation, and not “we improve \(\tau^2\) airline.” The mock \(0\to 0.5\to 1.0\) is a protocol unit test. Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point.
 
 ---
 
@@ -194,7 +194,13 @@ The *cascade exponent* is the local growth rate of \(\rho_n\) before coupling. A
 
 This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is that a vdom agent watches its own path measure and then edits either the loop or the weights.
 
-**Definition 6.1 (self-observation).** Let \(\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}\) together with first-passage proxies \((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})\) and completion \(\in\{\mathrm{hit},\mathrm{miss},\mathrm{hung},\mathrm{transfer},\mathrm{crash}\}\). The observation operator
+**Definition 6.1 (self-observation).** Let \(\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}\) together with first-passage proxies \((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})\) and a typed completion
+
+\[
+\mathrm{completion}\in\{\mathrm{hit},\,\mathrm{completed\text{-}miss},\,\mathrm{incomplete}\},
+\]
+
+where \(\mathrm{incomplete}=\mathrm{hung}\cup\mathrm{transfer\text{-}without\text{-}writes}\cup\mathrm{crash}\). The observation operator
 
 \[
 \mathrm{Obs}: (\text{traces},\,\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}},\,\mathrm{completion}) \to \text{features in }\mathcal{M}
@@ -206,7 +212,7 @@ writes a critique of the agent's *own* path measure into memory:
 M \leftarrow M \cup \{\texttt{obs}: \mathrm{Obs}(\mathrm{traces},\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}},\mathrm{completion})\}.
 \]
 
-This is a memory write, typically Dirac given traces. It is *not* a fourth noise channel. Hung, transfer-to-human, and crash are first-class completions: they stay in the task set and are not silent zeros. Examples of features: "\(p_{\mathrm{hit}}=0\) on the fixture", "tool-thrash on `search`", "\(\tau_S\) exceeded budget", "hung \(>8\) min", "transfer with zero required writes", "near-tie rate high (numerical channel)". In vdom this is `traces` plus `runBenchmark.score` plus episode completion.
+This is a memory write, typically Dirac given traces. It is *not* a fourth noise channel. Incomplete episodes stay in the task set and are not silent zeros. Attractor flags (invented policy, extra write, tool thrash) and wait-hit are features of \(\mathrm{Obs}\), not extra noise. Examples: "\(p_{\mathrm{hit}}=0\) on the fixture", "tool-thrash on `search`", "\(\tau_S\) exceeded budget", "hung \(>8\) min", "transfer with zero required writes", "near-tie rate high (numerical channel)". In vdom this is `traces` plus `runBenchmark.score` plus episode completion. The typed arm is Lemma 7.9.
 
 **Definition 6.2 (control from observation).**
 
@@ -234,8 +240,8 @@ On (\{T_{\mathrm{adapt}}=n\}\) the gate (g(A_\sigma,\text{fixture})\in\{\mathrm{
 
 **Definition 6.4 (dual intervention).** Write \(I_{\mathrm{loop}}\) and \(I_{\mathrm{weight}}\) for the two *licensed* arms of \(P^{\mathrm{ctrl}}\) after \(\mathrm{Obs}\):
 
-1. **Loop.** \(I_{\mathrm{loop}}: G\mapsto G'\) via scientist + reconcile. Changes *who calls whom* and which validators / temperatures / capabilities / policy checklists are mounted. Same \(f_\theta\). Serving does not pause. License: the miss is a topology or policy attractor.
-2. **Weights.** \(I_{\mathrm{weight}}\): spawn an asynchronous trainer on the slow clock; serving continues on the old \(f_\theta\); later, if \(\hat p_{\mathrm{hit}}\ge\text{threshold}\), gated \(\theta\) swap. Jump in \(f_\theta\). Topology may be unchanged. License: the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists). Until a real trainer exists, the runtime stub `FakeTrainer` is a protocol demo, not a measured update.
+1. **Loop.** \(I_{\mathrm{loop}}: G\mapsto G'\) via scientist + reconcile. Changes *who calls whom* and which validators / temperatures / capabilities / policy checklists are mounted. Same \(f_\theta\). Serving does not pause. License: a *completed* miss with a topology or policy attractor (Proposition 7.8a, Lemma 7.9).
+2. **Weights.** \(I_{\mathrm{weight}}\): spawn an asynchronous trainer on the slow clock; serving continues on the old \(f_\theta\); later, if \(\hat p_{\mathrm{hit}}\ge\text{threshold}\), gated \(\theta\) swap. Jump in \(f_\theta\). Topology may be unchanged. License: an *incomplete* episode, or a completed miss with no identified \(C\)-attractor (Proposition 7.8a, Lemma 7.9). Until a real trainer exists, the runtime stub `FakeTrainer` is a protocol demo, not a measured update. On 0731 the honest protocol is spawn / gate / reject: that model cannot take weights.
 
 Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoop`, `gateAdapter`, `gateCapability`, `unmountAdapterOnFailure`). Do not encode gold reservation IDs as the method; a policy node encodes rules.
 
@@ -305,16 +311,70 @@ While a trainer job is in flight, the fast process remains Markov with kernel (K
 
 `gateAdapter` / `gateCapability` compute (\hat p_{\mathrm{hit}}\) on a fixture and mount iff (\hat p_{\mathrm{hit}}\ge\text{threshold}\). This is Definition 5.3, not a new objective.
 
+### Proposition 7.8a (two licensed arms; kernel factorization)
+
+Generation uses \(f_\theta\) *under* control \(C\). From Definition 3.4 / 2.1,
+
+\[
+P^{\mathrm{gen}}_C(a\mid H,M)=\int P^{\mathrm{dec}}_C(a\mid\tilde\ell)\,P^{\mathrm{num}}(\mathrm{d}\tilde\ell\mid f_\theta(H),C).
+\]
+
+The path measure \(\mathbb{P}_C\) is therefore a function of the pair \((f_\theta,C)\), not of \(\theta\) alone and not of chat history \(H\) alone (\(H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})\) is Dirac given the step; accumulating \(H\) is not an arm).
+
+**Claim.** The support of \(P^{\mathrm{ctrl}}\) after \(\mathrm{Obs}\) needs (at least) two licensed non-identity arms.
+
+1. **Completed miss, attractor of \(C\).** The episode finished. There is a completed action-observation path. A metastable policy or tool attractor (invented policy, extra write, tool thrash) at fixed \(\theta\) is a failure of the composition \(K_C\), not of \(f_\theta\). Same \(\theta\); mutate \(C\). That is \(I_{\mathrm{loop}}\). Serving does not pause.
+2. **Incomplete episode.** Hang, transfer-without-writes, or crash yields no completed path to edit. \(I_{\mathrm{loop}}\) on empty (or non-completing) traces is *unidentified*: there is no observed path measure of a finished miss on which a graph mutation is a well-posed intervention. That licenses \(I_{\mathrm{weight}}\): spawn on the slow clock; serving continues on the old \(f_\theta\); mount only if the gate passes (Lemma 7.7). Reject is the identity on \(C\).
+3. **Neither arm is extra \(H\).** Appending context is coordinate (iv) of Definition 2.1. CL-Bench exploitable-poker ICL (Asawa et al., arXiv:2606.05661) measures gain \(g=r^{\mathrm{sf}}-r^{\mathrm{sl}}\) (stateful history vs the same system stateless). On poker the published curves overlap and accumulated state can hurt. That is a diagnostic that extra \(H\) is not \(I_{\mathrm{loop}}\), not a number we measured and not a SOTA claim.
+
+**Proof sketch.** Factorization (Definition 3.4) holds \(\theta\) fixed inside a generation. A completed path with an attractor of \(C\) is an identified intervention on \(P^{\mathrm{ctrl}}\) at that \(\theta\). An incomplete episode is not an identified intervention on \(C\): the scientist would be fitting a graph to a missing path. The two-clock construction (Definition 6.3, Lemma 7.7) is exactly the residual: change \(\theta\) off the serving kernel, or reject. \(\square\)
+
+### Lemma 7.9 (typed \(\mathrm{Obs}\) decision rule)
+
+A map, not a vibe. Cascade exponent \(\lambda\) of \(\rho_n\) (Definition 5.4) is *not* yet an input; §8.1 is the remaining refinement.
+
+**Inputs.**
+
+| Symbol | Type | Meaning |
+| --- | --- | --- |
+| \(\mathrm{completion}\) | \(\{\mathrm{hit},\,\mathrm{completed\text{-}miss},\,\mathrm{incomplete}\}\) | Finished hit; finished miss; or hung / transfer-without-writes / crash. Hung is never a hit. |
+| \(\mathrm{attractors}\) | \(\{0,1\}^3\) | Flags: invented policy, extra write, tool thrash (metastable loop of Definition 5.5). |
+| \(\mathrm{wait\text{-}hit}\) | \(\{0,1\}\) | \(\mathrm{completion}=\mathrm{hit}\) and \(\mathrm{Obs}\) selected \(\mathrm{wait}\) (per-task). |
+| \(\hat p_{\mathrm{hit}}\) | \([0,1]\) | Empirical first-passage (Definition 5.3). |
+
+**Output.** \(\delta\in\{\mathrm{wait},\,I_{\mathrm{loop}},\,I_{\mathrm{weight}}\}\).
+
+**Rule \(\delta\)** (first match):
+
+1. If \(\mathrm{wait\text{-}hit}=1\), or \(\mathrm{completion}=\mathrm{hit}\) and \(\hat p_{\mathrm{hit}}=1\): \(\delta=\mathrm{wait}\). Identity on \(C\). An unscoped \(I_{\mathrm{loop}}\) onto a wait-hit is an illegal apply.
+2. If \(\mathrm{completion}=\mathrm{incomplete}\): \(\delta=I_{\mathrm{weight}}\). Spawn on the slow clock. Serving stays on the pre-job kernel (Lemma 7.7). \(I_{\mathrm{loop}}\) on empty traces is unidentified (Proposition 7.8a). Gate may reject.
+3. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and at least one attractor flag is 1: \(\delta=I_{\mathrm{loop}}\). Same \(\theta\); mutate \(C\); serving does not pause.
+4. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and every attractor flag is 0: \(\delta=I_{\mathrm{weight}}\). The miss is not an identified failure of \(C\).
+
+Wait is the identity. Accumulating \(H\) is not in the output type.
+
+**What would falsify the split.**
+
+- A *completed miss* that only moves after \(\theta\) changes (no \(C\) mutation suffices). Then the miss was not a \(C\)-attractor; clause 3 licensed the wrong arm.
+- An *incomplete* episode that completes after a \(C\) mutation with no \(\theta\) change. Then \(I_{\mathrm{loop}}\) was identified on that incomplete trace; clause 2 licensed the wrong arm.
+
+The runtime already has `obs.arm`. Hung still defaults to \(I_{\mathrm{loop}}\) in vdom-harness `runner.py` (`elif hung: arm = "I_loop"`). That is a type error against clause 2, not a measurement.
+
+**Diagnostics (evidence for \(\delta\), not SOTA).** See `paper/NOTES_ARM_CHOICE.md`. Self \(I_{\mathrm{loop}}\) on airline \(39/44\) went \(0.5\to 0.0\): \(C\) moved the path measure (loop is real) and a global cancel-policy overwrote a wait-hit (illegal apply; licenses the wait-hit gate). Post-gate, task 44 hung: clause 2 licenses \(I_{\mathrm{weight}}\); the 0731 protocol is spawn / gate / reject (that model cannot take weights). Extra \(H\) is not \(I_{\mathrm{loop}}\) (Proposition 7.8a.3). Mock \(0\to 0.5\to 1.0\) remains a protocol unit test.
+
 ---
 
 ## §8 Open problems (for builders)
 
-1. When should \(\mathrm{Obs}\) choose \(I_{\mathrm{loop}}\) versus \(I_{\mathrm{weight}}\) versus wait? Locked rule: topology / policy attractor \(\to I_{\mathrm{loop}}\); model does not complete the task at all \(\to I_{\mathrm{weight}}\). Remaining work is to measure a real slow-clock trainer (not `FakeTrainer`) under that rule.
+### §8.1 Arm choice: decision rule stated; cascade-exponent refinement remains
+
+Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\mathrm{wait\text{-}hit},\,\hat p_{\mathrm{hit}})\). It is not a vibe and it does not delete this problem. Remaining work is to put the cascade exponent \(\lambda\) of \(\rho_n\) (Definition 5.4, Lemma 7.3) *into* \(\delta\): when should local Hamming growth tip a completed miss from \(I_{\mathrm{loop}}\) to \(I_{\mathrm{weight}}\)? Measure a real slow-clock trainer (not `FakeTrainer`) under the rule as written.
+
 2. Measure the three channels on a real stack (vLLM / llama.cpp / OpenRouter) with replay.
 3. Estimate cascade exponents on vdom word-reverse vs a tool-using task.
 4. When does best-of-\(k\) *with an external grader* beat (\tau\downarrow\) for (p_{\mathrm{hit}}\) at fixed compute?
 5. A calculus for composing vdom ops as kernel interventions (algebra of (C\)).
-6. Quasi-stationary loop detector from traces (input to (\mathrm{Obs}\)).
+6. Quasi-stationary loop detector from traces (attractor flags into Lemma 7.9).
 7. Safety: scientist-emitted (C\) and spawned trainers are untrusted interventions; same sandbox as capabilities. Slow-clock mounts must stay gated.
 
 ---
@@ -326,7 +386,8 @@ Interface, not implementation in this repo.
 - Make (\mathrm{Obs}\) a first-class memory write: first-passage stats and channel tags on `traces`.
 - Treat (C\) as first-class: temperature, validator, commit, seed as node props (like `model` after PR #2).
 - `improveLoop` already *is* (P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs})\): topology / capability / adapter, gated by eval. Name it that way.
-- Trainer port stays out-of-process. Serving must not block. Unmount remains rollback.
+- Implement Lemma 7.9: hung / transfer-without-writes / crash \(\to I_{\mathrm{weight}}\), not a default \(I_{\mathrm{loop}}\). Wait-hit stays the identity on \(C\).
+- Trainer port stays out-of-process. Serving must not block. Unmount remains rollback. 0731 spawn / gate / reject (cannot take weights).
 - Expose (\tau_S,\tau_F\) in `runBenchmark` (already has `score`).
 
 The typed kernel in `src/` is the contract these props should satisfy.
@@ -343,7 +404,9 @@ The ICLR contribution is the framework + theory. \(\tau^2\) and the 0731 rollout
 
 **Self-obs \(I_{\mathrm{loop}}\) on \(39+44\) (diagnostic; do not lead).** Live 0731, 2026-08-19, tasks \(39+44\), 1 trial, max-rounds 1, `selfObsPath=self`. Round 0: \(p_{\mathrm{hit}}=0.5\) (39 miss, Obs \(I_{\mathrm{loop}}\); 44 hit, Obs `wait`). Model returned valid \(I_{\mathrm{loop}}\) JSON and mounted a global `cancel_policy` (wrong attractor: it thought 44 / sophia needed a cancel). Round 1: \(p_{\mathrm{hit}}=0.0\) (39 still miss, same `MSJ4OA`; 44 regressed \(1\to 0\), `KC18K6` `action_match` false). Mid-turn `get_agent_graph` / `set_agent_graph`: zero calls. `servingPaused` false. Not \(I_{\mathrm{weight}}\) (episodes completed with writes). Same shape as held-out task 18: Obs said `wait` on a hit; a global \(I_{\mathrm{loop}}\) still changed \(C\) for the whole slice. That unscoped apply is illegal — evidence the loop ran and Obs chose \(I_{\mathrm{loop}}\), not a SOTA miss. JSON: `experiments/improve-live-0731-self-3944.json` (source: vdom-harness `eval/tau2/improve-live-0731-self-3944.json`).
 
-**Runtime fix (already merged; no new live 0731 numbers).** [vdom-harness PR #10](https://github.com/keejkrej/vdom-harness/pull/10) (2026-08-19): “Gate \(I_{\mathrm{loop}}\): wait-hit tasks keep \(C_0\)”. Mixed batch: wait+hit served on \(C_0\), miss / \(I_{\mathrm{loop}}\) served on \(C_1\). Logged as `applyScope {waitKept, looped}`. Host fallback `applyILoop` uses the same gate. Mock \(0\to 0.5\to 1.0\) still holds. Do not invent a post-gate live \(p_{\mathrm{hit}}\). Still missing: serving mid-turn get/set was never called; 39’s remaining miss is not this PR; \(I_{\mathrm{weight}}\) is not licensed.
+**Runtime fix (already merged).** [vdom-harness PR #10](https://github.com/keejkrej/vdom-harness/pull/10) (2026-08-19): “Gate \(I_{\mathrm{loop}}\): wait-hit tasks keep \(C_0\)”. Mixed batch: wait+hit served on \(C_0\), miss / \(I_{\mathrm{loop}}\) served on \(C_1\). Logged as `applyScope {waitKept, looped}`. Host fallback `applyILoop` uses the same gate. Mock \(0\to 0.5\to 1.0\) still holds. That gate is clause 1 of Lemma 7.9.
+
+**Post-gate hang licenses \(I_{\mathrm{weight}}\) (evidence for the rule; do not lead).** Live 0731, 2026-08-20, after the wait-hit gate, same \(39+44\), 1 trial, max-rounds 1. Round 0: 39 completed-miss (Obs \(I_{\mathrm{loop}}\)); 44 hung (`taskPHit` null, skipped `44:t0:timeout`, reward null, nmsg 0 — not a measured 0). Runtime still emitted \(I_{\mathrm{loop}}\)+hung (type error vs Lemma 7.9 clause 2). `applyScope waitKept=[] looped=[39,44]`: no wait-hit, so the gate behaved. Round 1: 44 completed (hang \(\to\) finished miss) under a cancel attractor. `iWeight` null: max-rounds 1 stopped after \(I_{\mathrm{loop}}\). The hang is an incomplete episode: \(I_{\mathrm{loop}}\) on empty traces is unidentified; \(I_{\mathrm{weight}}\) is licensed. 0731 cannot take weights; the honest protocol is spawn / gate / reject ([vdom-harness PR #8](https://github.com/keejkrej/vdom-harness/pull/8)). Do not invent post-\(I_{\mathrm{weight}}\) live numbers. JSON: `experiments/improve-live-0731-self-3944-postgate.json`. See `paper/NOTES_ARM_CHOICE.md`.
 
 Mock closed loop \(0\to 0.5\to 1.0\) on official `update_task_1` / `impossible_task_1` is a **protocol unit test**, not an ICLR result.
 

@@ -161,6 +161,8 @@ If \(\mathrm{Obs}(\mathrm{traces}_t)\) selects \(\mathrm{wait}\), then \(C_{t+1}
 If \(\mathrm{Obs}\) sees a topology or policy attractor (temperature-invariant action loop, first-right-then-repeat, invented policy, refused-but-required write), \(P^{\mathrm{ctrl}}\) licenses \(I_{\mathrm{loop}}\). If \(\mathrm{Obs}\) sees that the model does not complete the task at all (knowledge miss, empty retrieval, hang / transfer / crash with no progress in \(E\) after licensed \(I_{\mathrm{loop}}\)), \(P^{\mathrm{ctrl}}\) licenses \(I_{\mathrm{weight}}\). \(\mathrm{wait}\) remains the fixed point on \(\hat p_{\mathrm{hit}}=1\).
 \end{lemma}
 
+The typed map, inputs, outputs, and falsifier are Lemma 7.9 in \texttt{paper/FRAMEWORK.md} (Proposition 7.8a is why two arms exist). Negative traces are evidence for that rule, not scores to max: self-obs \(39+44\) \(0.5\to 0.0\) (wait-hit overwritten; \(C\) moved); post-gate hang on \(44\) (\(I_{\mathrm{weight}}\) licensed; 0731 spawn / reject); extra \(H\) is not \(I_{\mathrm{loop}}\). See \texttt{paper/NOTES\_ARM\_CHOICE.md}.
+
 Proofs of the first two are elementary. Lemma~\ref{lem:spawn} is by construction of \(I_{\mathrm{weight}}\). Further tradeoffs: \texttt{paper/FRAMEWORK.md}. Counts that \emph{license} an arm---not a leaderboard---are in \texttt{paper/ANALYSIS.md}.
 
 \section{Diagnostics: existence and arm choice}

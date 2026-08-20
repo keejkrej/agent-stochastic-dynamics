@@ -1,0 +1,109 @@
+{
+  "benchmark": "tau2-bench",
+  "kind": "runtime-self-improvement",
+  "role": "diagnostic",
+  "closedLoop": true,
+  "live": true,
+  "domain": "airline",
+  "taskIds": ["39", "44"],
+  "numTrials": 1,
+  "maxRounds": 1,
+  "model": "deepseek/deepseek-v4-flash-0731",
+  "provider": "openrouter",
+  "agent": "vdom",
+  "date": "2026-08-20",
+  "afterWaitHitGate": true,
+  "selfObsPath": "self",
+  "servingPaused": false,
+  "midTurnGetSetAgentGraph": 0,
+  "iWeight": null,
+  "iWeightLicensed": true,
+  "iWeightTaken": false,
+  "iWeightNote": "Hang on 44 licenses I_weight (Lemma 7.9 clause 2), not another critic. Runtime still tagged I_loop+hung — type error. max-rounds 1 stopped after I_loop. 0731 cannot take a LoRA; I_weight is spawn/gate/mount-or-reject + surrogate/FakeTrainer, never a fake 0731 adapter win. Do not invent post-I_weight live numbers.",
+  "pHitSequence": [0.0, 0.0],
+  "pHitNote": "Do not lead with 0→0. Round 0 p_hit is on completed tasks only (39 miss). Task 44 hung/timeout (taskPHit null, skipped 44:t0:timeout, reward null, nmsg 0) is not a measured 0. Round 1: both completed; p_hit stayed 0. Completion moved on 44 (hung → finished miss). Evidence for the typed rule, not a score.",
+  "passHatK": {
+    "note": "k=1 only. Not a SOTA miss and not pass^k reliability. Hang is the licensing signal.",
+    "before": { "1": 0.0 },
+    "after": { "1": 0.0 }
+  },
+  "interventions": ["I_loop"],
+  "rounds": [
+    {
+      "round": 0,
+      "technique": "one-shot",
+      "pHit": 0.0,
+      "taskPHit": { "39": 0.0, "44": null },
+      "obs": {
+        "39": "I_loop",
+        "44": "I_loop+hung"
+      },
+      "lemma79": {
+        "39": "completed-miss + attractor → I_loop",
+        "44": "incomplete (hung) → I_weight; runtime emitted I_loop (type error)"
+      },
+      "notes": {
+        "39": "miss (completed). cancel 8C8K4E+LU15PA match true; MSJ4OA false. Live-trace IDs, not gold injected into the prompt.",
+        "44": "hung/timeout. skipped 44:t0:timeout; reward null; nmsg 0. Not treated as a measured 0."
+      },
+      "skipped": ["44:t0:timeout"],
+      "intervention": null
+    },
+    {
+      "round": 1,
+      "technique": "self-obs I_loop",
+      "pHit": 0.0,
+      "taskPHit": { "39": 0.0, "44": 0.0 },
+      "mounted": "cancellation-policy-checklist",
+      "applyScope": { "waitKept": [], "looped": ["39", "44"] },
+      "applyScopeNote": "Correct under the wait-hit gate: there was no wait-hit.",
+      "wrongAttractor": "self I_loop still a cancel attractor; 44 completed then cancelled something it should not",
+      "notes": {
+        "39": "three gold cancels now all action_match true, plus extra cancels (all five). DB 0 because extras, not because MSJ4OA missed.",
+        "44": "completed (hang → finish). three gold upgrades action_match true, plus an illegal cancel. DB 0."
+      },
+      "intervention": "I_loop"
+    }
+  ],
+  "perTask": {
+    "39": {
+      "pHit": [0.0, 0.0],
+      "obsR0": "I_loop",
+      "completion": ["finished miss", "finished miss"],
+      "note": "Round 1 extras, not an MSJ4OA miss. Still I_loop-shaped policy-write error after completion."
+    },
+    "44": {
+      "pHit": [null, 0.0],
+      "obsR0": "I_loop+hung",
+      "completion": ["hung/timeout", "finished miss"],
+      "note": "Hang licenses I_weight (Lemma 7.9). After I_loop, finished then illegal cancel. Not a measured r0 0."
+    }
+  },
+  "gateBehaved": true,
+  "licensedArm": "I_weight",
+  "preGate": {
+    "json": "experiments/improve-live-0731-self-3944.json",
+    "note": "Pre-gate 0.5→0.0 illegal unscoped apply; vdom-harness PR #10 wait-hit gate. Recorded in SDS #8. Evidence that C moved the path measure, not a lead score."
+  },
+  "runtimeFix": {
+    "repo": "vdom-harness",
+    "pr": 10,
+    "merged": "2026-08-19",
+    "url": "https://github.com/keejkrej/vdom-harness/pull/10",
+    "title": "Gate I_loop: wait-hit tasks keep C0",
+    "applyScopeThisRun": { "waitKept": [], "looped": ["39", "44"] },
+    "hostFallback": "applyILoop uses the same gate",
+    "mockStillHolds": "0→0.5→1.0"
+  },
+  "stillMissing": [
+    "serving mid-turn get_agent_graph / set_agent_graph was never called (zero calls)",
+    "I_weight was licensed by the hang but not taken (max-rounds 1; iWeight null)",
+    "no post-I_weight live numbers; do not invent any",
+    "0731 cannot take a LoRA; do not fake an adapter win",
+    "runtime hung still defaults to I_loop (Lemma 7.9 type error)"
+  ],
+  "honestNote": "Evidence for Lemma 7.9, not a SOTA miss. Mixed batch with a hang: applyScope looped both (no wait-hit); gate behaved. Self I_loop still a cancel attractor. Completion moved on 44 (hung → finished miss). The hang licenses I_weight, not another critic. Do not lead with 0→0.",
+  "sourceFile": "eval/tau2/improve-live-0731-self-3944-postgate.json",
+  "sourceRepo": "vdom-harness",
+  "theory": "paper/FRAMEWORK.md Lemma 7.9; paper/NOTES_ARM_CHOICE.md"
+}

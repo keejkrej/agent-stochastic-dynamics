@@ -35,9 +35,9 @@ The runtime is a self-observing agent that reengineers its loop and/or dispatche
 
 | Arm | vdom | License |
 | --- | --- | --- |
-| I_loop | scientist emits AgentGraph; reconcile mutates composition of K; serving does not pause | miss is a topology / policy attractor |
-| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process; does not change f_θ; serving keeps old weights | model does not complete tasks at all |
-| I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump on the slow clock | eval gate passes |
+| I_loop | scientist emits AgentGraph; reconcile mutates composition of K; serving does not pause | completed miss with a topology / policy attractor (Lemma 7.9) |
+| I_weight spawn | trainer.ts Trainer.train(traces) -- out of process; does not change f_θ; serving keeps old weights | incomplete episode, or completed miss with no identified C-attractor. Hung must not default to I_loop. 0731: spawn / gate / reject |
+| I_weight mount | lifecycle.ts gateAdapter; PhysicalNode.adapter; AgentNode.model jump on the slow clock | eval gate passes (Lemma 7.7, 7.8) |
 | rollback | unmountAdapterOnFailure; unmount = rollback | post-mount regression |
 | eval gate | runBenchmark score = empirical p_hit; τ² pass^k when that is the *gate*, not the paper claim | fixture first-passage |
 | existence loop | iterate improveLoop given Obs | diagnostic that the loop ran |

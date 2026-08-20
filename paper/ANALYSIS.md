@@ -19,12 +19,13 @@ Iterate $P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs}(\mathrm{traces}))$ on the fast 
 
 No number below is invented.
 
-**Arm choice.** From $\mathrm{Obs}$:
+**Arm choice.** Typed rule: `paper/FRAMEWORK.md` Lemma 7.9 and `paper/NOTES_ARM_CHOICE.md`. From $\mathrm{Obs}$:
 
-- $I_{\mathrm{loop}}$ when the miss is a topology / policy attractor — mutate the AgentGraph (composition of $K$);
-- $I_{\mathrm{weight}}$ when the model does not complete tasks at all — async trainer; serving keeps old $f_\theta$; mount only if the eval gate passes. `FakeTrainer` is a protocol demo.
+- `wait` on wait-hit (identity on $C$);
+- $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph (composition of $K$);
+- $I_{\mathrm{weight}}$ on an *incomplete* episode (hung / transfer-without-writes / crash), or a completed miss with no identified $C$-attractor — async trainer; serving keeps old $f_\theta$; mount only if the eval gate passes. `FakeTrainer` is a protocol demo. Hung must not default to $I_{\mathrm{loop}}$.
 
-Then it observes again. That iteration is the process the framework names.
+Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 
 ---
 

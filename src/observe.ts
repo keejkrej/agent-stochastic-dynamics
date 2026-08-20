@@ -9,12 +9,12 @@
  * After I_loop or a gated I_weight mount, Obs reads the *new* traces and may fire again.
  * I_weight jumps (mount) live on the slow clock. wait is a fixed point.
  *
- * Decision rule licensed by the 0731 diagnostic (paper/ANALYSIS.md):
- *   metastable action loop / first-right-then-repeat → I_loop
- *   knowledge miss ("I don't know") → I_weight (spawn trainer; spawn ≠ mount)
- *   p_hat = 1 → wait
- * Toys license the first arm. They are not the paper result.
- * The figure is pass^k(t) on the loop (TO RUN), not a one-shot before/after.
+ * Typed rule: paper/FRAMEWORK.md Lemma 7.9 / paper/NOTES_ARM_CHOICE.md
+ *   wait-hit or hit ∧ p_hat = 1 → wait
+ *   incomplete (hung / transfer-without-writes / crash) → I_weight
+ *   completed-miss ∧ attractor (invented policy / extra write / tool thrash) → I_loop
+ *   completed-miss ∧ no attractor → I_weight
+ * Extra H is not an arm. Hung must not default to I_loop.
  */
 import type { Control, StepTrace } from "./types.js";
 
@@ -29,6 +29,26 @@ export type Intervention =
 
 export type ObsArm = "wait" | "I_loop" | "I_weight" | "inspect";
 
+/** Lemma 7.9 completion. Hung is never a hit. */
+export type Completion = "hit" | "completed-miss" | "incomplete";
+
+export type IncompleteKind = "hung" | "transfer-without-writes" | "crash";
+
+export type AttractorFlags = {
+  inventedPolicy: boolean;
+  extraWrite: boolean;
+  toolThrash: boolean;
+};
+
+export type ObsDecisionIn = {
+  completion: Completion;
+  attractors: AttractorFlags;
+  waitHit: boolean;
+  pHatHit: number;
+};
+
+export type LicensedArm = "wait" | "I_loop" | "I_weight";
+
 export type ObsFeatures = {
   nSteps: number;
   nSuccessProxy: number;
@@ -38,6 +58,8 @@ export type ObsFeatures = {
   repeatRate: number;
   firstAction: string;
   arm: ObsArm;
+  completion?: Completion;
+  waitHit?: boolean;
 };
 
 export type TrainerJob = {
@@ -74,7 +96,24 @@ function looksLikeKnowledgeMiss(traces: StepTrace[], actions: string[]): boolean
   return /i don't know|i do not know|unknown|no results|cannot recall|not sure/.test(blob);
 }
 
-export function observe(traces: StepTrace[], pHitHat: number): ObsFeatures {
+/**
+ * Lemma 7.9. First match.
+ * Extra H is not an input. Cascade exponent is not yet an input (§8.1).
+ */
+export function decideArm(input: ObsDecisionIn): LicensedArm {
+  if (input.waitHit || (input.completion === "hit" && input.pHatHit >= 1)) return "wait";
+  if (input.completion === "incomplete") return "I_weight";
+  const attractor =
+    input.attractors.inventedPolicy || input.attractors.extraWrite || input.attractors.toolThrash;
+  if (input.completion === "completed-miss" && attractor) return "I_loop";
+  return "I_weight";
+}
+
+export function observe(
+  traces: StepTrace[],
+  pHitHat: number,
+  opts?: { completion?: Completion; waitHit?: boolean; attractors?: Partial<AttractorFlags> },
+): ObsFeatures {
   const lastActions = traces.map((t) => t.action.text);
   const channels = [...new Set(traces.flatMap((t) => t.channels))];
   const repeatRate = consecutiveRepeatRate(lastActions);
@@ -92,16 +131,26 @@ export function observe(traces: StepTrace[], pHitHat: number): ObsFeatures {
   const metastableLoop = wrLoop || calcStuck || (repeatRate === 1 && timeoutLike && zeroProgress);
   const knowledgeMiss = pHitHat < 1 && looksLikeKnowledgeMiss(traces, lastActions);
 
+  const completion: Completion =
+    opts?.completion ?? (pHitHat >= 1 ? "hit" : "completed-miss");
+  const waitHit = opts?.waitHit ?? (completion === "hit" && pHitHat >= 1);
+  const attractors: AttractorFlags = {
+    inventedPolicy: opts?.attractors?.inventedPolicy ?? false,
+    extraWrite: opts?.attractors?.extraWrite ?? false,
+    toolThrash: opts?.attractors?.toolThrash ?? metastableLoop,
+  };
+  const typed = decideArm({ completion, attractors, waitHit, pHatHit: pHitHat });
+
   let critique: string;
-  let arm: ObsArm;
-  if (pHitHat >= 1) {
+  let arm: ObsArm = typed;
+  if (typed === "wait") {
     critique = "path measure hits S; wait";
-    arm = "wait";
-  } else if (metastableLoop) {
+  } else if (typed === "I_weight" && completion === "incomplete") {
+    critique = "incomplete episode; I_weight: spawn trainer (I_loop on empty traces unidentified)";
+  } else if (typed === "I_loop") {
     critique = "metastable loop; I_loop: forbid last failed action / Self-Refine; loop mutation";
-    arm = "I_loop";
-  } else if (knowledgeMiss) {
-    critique = "knowledge miss; I_weight: spawn trainer";
+  } else if (knowledgeMiss || typed === "I_weight") {
+    critique = "knowledge miss or unidentified C-failure; I_weight: spawn trainer";
     arm = "I_weight";
   } else if (lastActions.includes("reverse_entire") || lastActions.includes("answer:10")) {
     critique = "fixture miss; loop mutation or spawn trainer";
@@ -121,16 +170,18 @@ export function observe(traces: StepTrace[], pHitHat: number): ObsFeatures {
     repeatRate,
     firstAction,
     arm,
+    completion,
+    waitHit,
   };
 }
 
 export function chooseIntervention(obs: ObsFeatures, job?: TrainerJob): Intervention {
-  if (obs.nSuccessProxy >= 1 || obs.arm === "wait") return "wait";
+  if (obs.nSuccessProxy >= 1 || obs.arm === "wait" || obs.waitHit) return "wait";
   if (job?.status === "ready" && job.resultModelId) return "mount_adapter";
   if (job?.status === "failed") return "rollback";
   if (job?.status === "running") return "wait";
+  if (obs.completion === "incomplete" || obs.arm === "I_weight") return "spawn_trainer";
   if (obs.arm === "I_loop" || obs.critique.includes("loop mutation")) return "graph_mutation";
-  if (obs.arm === "I_weight") return "spawn_trainer";
   return "spawn_trainer";
 }
 

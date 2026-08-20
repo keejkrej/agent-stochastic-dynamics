@@ -11,7 +11,7 @@ The paper establishes a **runtime self-improvement framework with theoretical su
 - An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env).
 - \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\).
 - Two licensed interventions: \(I_{\mathrm{loop}}\) (mutate AgentGraph / \(C\); serving does not pause) and \(I_{\mathrm{weight}}\) (async trainer on a slow clock; gated \(\theta\) swap; serving continues on old weights).
-- Arm choice: \(I_{\mathrm{loop}}\) when the miss is a topology / policy attractor. \(I_{\mathrm{weight}}\) when the model does not complete tasks at all (the original reason \(\tau^2\)-bench exists).
+- Arm choice: typed rule in `paper/FRAMEWORK.md` Lemma 7.9. \(I_{\mathrm{loop}}\) on a completed miss with a topology / policy attractor. \(I_{\mathrm{weight}}\) on an incomplete episode (or a completed miss with no identified \(C\)-attractor). Wait on wait-hit. Extra \(H\) is not an arm. See `paper/NOTES_ARM_CHOICE.md`.
 
 **Experiments are existence and arm-choice diagnostics**, not a \(\tau^2\) SOTA attempt and not “we improve \(\tau^2\) airline.”
 

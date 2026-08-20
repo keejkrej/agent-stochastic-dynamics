@@ -21,8 +21,9 @@ Papers, blogs, GitHub, X, and other agents are **inputs** to that runtime, not t
 
 - ICLR 2027 draft: `paper/iclr2027/main.tex`
 - Venue track (ICLR 2027 first; contribution = framework+theory; experiments = existence/arm-choice): `paper/NOTES_VENUE.md`
-- Framework: `paper/FRAMEWORK.md`
-- Diagnostic counts (0731 toys; held-out airline \(I_{\mathrm{loop}}\) \(0.7\to 0.9\) at \(k=1\), including a regression; self-obs \(39+44\) \(0.5\to 0.0\) as illegal-apply evidence, not a lead; not SOTA): `paper/ANALYSIS.md`
+- Framework: `paper/FRAMEWORK.md` (Lemma 7.9 typed Obs rule; Proposition 7.8a why two arms)
+- Arm-choice note (types, falsifier, hang licenses \(I_{\mathrm{weight}}\); not a score): `paper/NOTES_ARM_CHOICE.md`
+- Diagnostic counts (0731 toys; held-out airline \(I_{\mathrm{loop}}\) \(0.7\to 0.9\) at \(k=1\), including a regression; self-obs \(39+44\) \(0.5\to 0.0\) as illegal-apply evidence, not a lead; post-gate hang as evidence for the rule, not a lead; not SOTA): `paper/ANALYSIS.md`
 - Static \(\tau^2\) retail \(5\times 4\) as \(\mathbb{P}_{C_0}\) (wait fixed point): `paper/ANALYSIS_STATIC_TAU2.md`
 - Math \(\leftrightarrow\) runtime map: `docs/VDOM_INTERFACE.md`
 

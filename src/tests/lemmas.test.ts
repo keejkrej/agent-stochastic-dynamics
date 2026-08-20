@@ -7,7 +7,7 @@ import { CALCULATOR, WORD_REVERSE } from "../tasks.js";
 import { createProvider, openRouterKey } from "../openrouter.js";
 import { defaultControl } from "../types.js";
 import { rollout } from "../experiments.js";
-import { applyIntervention, chooseIntervention, observe } from "../observe.js";
+import { applyIntervention, chooseIntervention, decideArm, observe } from "../observe.js";
 import type { TrainerJob } from "../observe.js";
 
 test("greedy collapse: τ=0, unique argmax, Dirac env/mem/ctrl ⇒ automaton", () => {
@@ -130,6 +130,45 @@ test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
   const mounted = applyIntervention(C0, "mount_adapter", ready);
   assert.equal(mounted.C.modelId, "adapted:a1");
   assert.equal(mounted.C.adapterId, "a1");
+});
+
+test("Lemma 7.9: typed Obs arm is wait | I_loop | I_weight", () => {
+  const none = { inventedPolicy: false, extraWrite: false, toolThrash: false };
+  const thrash = { inventedPolicy: false, extraWrite: false, toolThrash: true };
+  const invented = { inventedPolicy: true, extraWrite: false, toolThrash: false };
+  const extra = { inventedPolicy: false, extraWrite: true, toolThrash: false };
+
+  assert.equal(decideArm({ completion: "hit", attractors: none, waitHit: true, pHatHit: 1 }), "wait");
+  assert.equal(decideArm({ completion: "hit", attractors: thrash, waitHit: false, pHatHit: 1 }), "wait");
+  assert.equal(
+    decideArm({ completion: "completed-miss", attractors: invented, waitHit: false, pHatHit: 0 }),
+    "I_loop",
+  );
+  assert.equal(
+    decideArm({ completion: "completed-miss", attractors: extra, waitHit: false, pHatHit: 0 }),
+    "I_loop",
+  );
+  assert.equal(
+    decideArm({ completion: "completed-miss", attractors: thrash, waitHit: false, pHatHit: 0 }),
+    "I_loop",
+  );
+  assert.equal(
+    decideArm({ completion: "completed-miss", attractors: none, waitHit: false, pHatHit: 0 }),
+    "I_weight",
+  );
+  assert.equal(
+    decideArm({ completion: "incomplete", attractors: thrash, waitHit: false, pHatHit: 0 }),
+    "I_weight",
+  );
+  assert.equal(
+    decideArm({ completion: "incomplete", attractors: none, waitHit: false, pHatHit: 0 }),
+    "I_weight",
+  );
+
+  const hung = observe([], 0, { completion: "incomplete" });
+  assert.equal(hung.arm, "I_weight");
+  assert.equal(chooseIntervention(hung), "spawn_trainer");
+  assert.ok(hung.critique.includes("incomplete"));
 });
 
 test("live flags parse N, temps, cascade; rate-limit detector; no-key rollout", async () => {
