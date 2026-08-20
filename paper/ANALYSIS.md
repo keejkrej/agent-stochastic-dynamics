@@ -23,7 +23,7 @@ No number below is invented.
 
 - `wait` on wait-hit (identity on $C$);
 - $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph, same SKU;
-- $I_{\mathrm{sku}}$ on an *incomplete* episode (hang / crash / no-write). Stand-in catalog pointer rebind ($0731\to 0813$). Not $f_\theta$. License is incompleteness, not price. Serving keeps the current SKU (`servingPaused=false`). Jump iff later serving uses the new pointer. A cell, not the contribution. Do not sell $p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
+- $I_{\mathrm{sku}}$ on an *incomplete* episode (hang / crash / no-write). Stand-in catalog pointer rebind ($0731\to 0813$). Not $f_\theta$. License is incompleteness, not price. Serving keeps the current SKU (`servingPaused=false`). Jump iff later serving uses the new pointer. A cell, not the contribution. Do not sell $p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)$. Controller log: [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) (hung-first).
 
 Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 

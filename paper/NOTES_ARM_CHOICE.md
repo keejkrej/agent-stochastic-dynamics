@@ -42,8 +42,8 @@ Generation uses the currently bound SKU under graph \(C\). A completed miss with
 
 - A completed miss that only moves after the SKU changes (clause 3 wrong).
 - An incomplete episode that completes after a \(C\) mutation with no SKU change (clause 2 wrong).
-- If hung-44 is still \(I_{\mathrm{loop}}\) unless `loopExhausted`, the split is dead.
 - If a mount never rebinds serving to 0813, there was no jump.
+- A completed miss with no attractor that only moves after \(C\) changes (clause 4 wrong).
 
 ## Diagnostics, not SOTA
 
@@ -52,7 +52,7 @@ Do not invent numbers. Do not lead with \(0.7\to 0.9\). Do not sell \(p_{\mathrm
 | Trace | What it licenses | What it is not |
 | --- | --- | --- |
 | Self \(I_{\mathrm{loop}}\) airline \(39/44\), \(0.5\to 0.0\) | \(I_{\mathrm{loop}}\) is real: \(C\) moved the path measure. Wait-hit gate (vdom-harness PR #10). | A SOTA miss. |
-| Post-gate 44 hung | Incomplete episode. \(I_{\mathrm{sku}}\) licensed. Runtime still tagged `I_loop`+hung unless `loopExhausted` — split is dead if left. | A routing result. A Pro-vs-Flash score. |
+| Post-gate 44 hung | Incomplete episode. \(I_{\mathrm{sku}}\) licensed. Controller log: [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) (hung-first, 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty). | A routing result. A Pro-vs-Flash score. |
 | CL-Bench exploitable-poker ICL (Asawa et al., arXiv:2606.05661) | Extra \(H\) is not \(I_{\mathrm{loop}}\). | Our measurement. An arm. |
 | Mock \(0\to 0.5\to 1.0\) | Protocol unit test. | A result. |
 | Toys 0/12 sequential, 12/12 retrieval | Completed-miss + tool-thrash → \(I_{\mathrm{loop}}\). | The agent benchmark. |

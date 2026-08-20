@@ -1,10 +1,12 @@
 # Runtime self-improvement: typed-noise hybrid dynamics
 
-**Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. Dual *implemented* arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. Typed \(\mathrm{Obs}\) is a contribution only after the controller implements it — a harness log, not a slogan in this file. Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
+**Self-improvement**, in this paper, is \(\mathrm{Obs}\) plus a licensed edit of graph \(C\) or catalog pointer \(S\). Not weights. Not a trainer.
 
-**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that can edit graph \(C\) or rebind a catalog SKU. TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+**Status.** Theoretical framework for ICLR 2027. Objects below are definitions, lemmas, conjectures, or engineering interfaces; the type is named at each claim. Dual *implemented* arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\) (catalog pointer). Wait is the identity. \(f_\theta\) / trainer / \(I_{\mathrm{weight}}\) is unimplemented. Typed \(\mathrm{Obs}\) is a contribution only after the controller implements it — the controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) (hung-first: 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty). Experiments are existence and arm-choice diagnostics, not a \(\tau^2\) leaderboard.
 
-**Thesis (author lock).** Write **\(C\) vs SKU vs wait.** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow catalog pointer* (SKU: `PhysicalNode.provider` / `n.model`). Do **not** write the slow factor as \(f_\theta\). We cannot train. Dual implemented arms: \(I_{\mathrm{loop}}\) mutates graph \(C\) (same SKU); \(I_{\mathrm{sku}}\) gated-rebinds the catalog pointer (same \(C\)). Wait is the identity. **License for \(I_{\mathrm{sku}}\) is an incomplete episode (hang / no-write / crash), not price.** Completed miss + attractor \(\to I_{\mathrm{loop}}\). Hits wait. Accumulating \(H\) is neither arm.
+**Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only). TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. \(S\) is specified here. The serving-id cell in the harness is still `n.model`; that cell is the controller log of [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11). This paper does not claim the runtime already stores a separate \(S\). Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
+
+**Thesis.** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow catalog pointer*. Do **not** write the slow factor as \(f_\theta\). We cannot train. Dual implemented arms: \(I_{\mathrm{loop}}\) mutates graph \(C\) (same SKU); \(I_{\mathrm{sku}}\) gated-rebinds the catalog pointer (same \(C\)). Wait is the identity. **License for \(I_{\mathrm{sku}}\) is an incomplete episode (hang / no-write / crash), not price.** Completed miss + attractor \(\to I_{\mathrm{loop}}\). Completed miss with no identified attractor of \(C\) \(\to I_{\mathrm{sku}}\) (Lemma 7.9 clause 4). Hits wait. Accumulating \(H\) is neither arm.
 
 \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) is the *stand-in* slow cell on this stack, because \(f_\theta\) / trainer is unimplemented. **A cell, not the contribution.** `0813` is one available SKU, not the license. SKU swap alone is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). The gate is eval / first-passage (Definition 5.3), not “0813 exists” (that would be always-mount). Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not title this paper as model routing. Do not title this paper as async weight updates.
 
@@ -371,14 +373,13 @@ Wait is the identity. Accumulating \(H\) is not in the output type.
 
 - A *completed miss* that only moves after \(S\) changes (no \(C\) mutation suffices). Then the miss was not a \(C\)-attractor; clause 3 licensed the wrong arm.
 - An *incomplete* episode that completes after a \(C\) mutation with no \(S\) change. Then \(I_{\mathrm{loop}}\) was identified on that incomplete trace; clause 2 licensed the wrong arm.
-- Putting the model pointer back inside \(C\) so both arms write the same coordinate.
-- If hung-44 is still \(I_{\mathrm{loop}}\) unless `loopExhausted`, the split is dead (clause 2 was not implemented).
+- A *completed miss with no attractor* that only moves after \(C\) changes. Then clause 4 licensed the wrong arm (unidentified \(C\) was identified).
 - If a mount never rebinds serving to 0813, there was no jump (Lemma 7.7: later serving must use the new SKU).
 - Treating \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result of this paper (buying a stronger API; a diagnostic at most).
 
-The runtime already has `obs.arm`. Hung still defaults to \(I_{\mathrm{loop}}\) in vdom-harness `runner.py` (`elif hung: arm = "I_loop"`) and `recommendIntervention` waits for `loopExhausted`. That is a type error against clause 2, not a measurement. If hung-44 stays \(I_{\mathrm{loop}}\) unless `loopExhausted`, the split is dead.
+**Controller log (not a slogan).** [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11) implements the map hung-first: 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. \(S\) is specified in this document. The serving-id cell in that runtime is still `n.model`. This paper does not claim the harness already stores a separate \(S\).
 
-**Diagnostics (evidence for \(\delta\), not SOTA).** See `paper/NOTES_ARM_CHOICE.md`. Self \(I_{\mathrm{loop}}\) on airline \(39/44\) went \(0.5\to 0.0\): \(C\) moved the path measure (loop is real) and a global cancel-policy overwrote a wait-hit (illegal apply; licenses the wait-hit gate). Post-gate, task 44 hung: clause 2 licenses \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813). Extra \(H\) is not \(I_{\mathrm{loop}}\) (Proposition 7.8a.3). Mock \(0\to 0.5\to 1.0\) is a protocol unit test, not a result. Do not report \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result.
+**Diagnostics (evidence for \(\delta\), not SOTA).** See `paper/NOTES_ARM_CHOICE.md`. Self \(I_{\mathrm{loop}}\) on airline \(39/44\) went \(0.5\to 0.0\): \(C\) moved the path measure (loop is real) and a global cancel-policy overwrote a wait-hit (illegal apply; licenses the wait-hit gate). Post-gate, task 44 hung: clause 2 licenses \(I_{\mathrm{sku}}\); the controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11). Extra \(H\) is not \(I_{\mathrm{loop}}\) (Proposition 7.8a.3). Mock \(0\to 0.5\to 1.0\) is a protocol unit test, not a result. Do not report \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result.
 
 ---
 
@@ -397,19 +398,13 @@ Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\m
 
 ---
 
-## §9 What to do tomorrow in vdom-harness
+## §9 Controller log (vdom-harness)
 
-Interface, not implementation in this repo.
+Lemma 7.9 is not a tomorrow item. The controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11): hung-first, 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. License is incompleteness, not `loopExhausted`.
 
-- Make (\mathrm{Obs}\) a first-class memory write: first-passage stats and channel tags on `traces`.
-- Split the runtime state: graph \(C\) (temperature, validator, commit, seed) is not the decoder pointer \(S\) (`PhysicalNode.provider` / `n.model`).
-- `improveLoop` writes \(C\) only. The slow arm gated-rebinds \(S\). They are not two names for one bag.
-- Implement Lemma 7.9: hung / crash / no-write \(\to I_{\mathrm{sku}}\), not a default \(I_{\mathrm{loop}}\) and not “\(I_{\mathrm{loop}}\) until `loopExhausted`”. License is incompleteness. Wait-hit stays the identity on \(C\) and \(S\).
-- Available cell \(I_{\mathrm{sku}}\): `0731` \(\to\) `0813`. A cell, not the title. `servingPaused=false`. Gate is eval / first-passage, not “0813 exists.” Later serving must use 0813 or there was no jump. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not title the runtime as a router.
-- Do not spawn a trainer. \(f_\theta\) / \(I_{\mathrm{weight}}\) is unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell.
-- Expose (\tau_S,\tau_F\) in `runBenchmark` (already has `score`).
+\(S\) is specified in this document. The serving-id cell in the harness is still `n.model`. This paper does not claim the runtime already stores a separate \(S\). Do not put the pointer back inside the *specified* \(C\).
 
-The typed kernel in `src/` is the contract these props should satisfy.
+Remaining interface (not a Lemma 7.9 rewrite): first-passage tags on `traces`; gate is eval / first-passage, not “0813 exists”; later serving must use the new SKU or there was no jump. \(f_\theta\) / trainer remains unimplemented. \(I_{\mathrm{sku}}\) is the stand-in slow cell.
 
 ---
 
@@ -425,7 +420,7 @@ Dual implemented arms: \(I_{\mathrm{loop}}\) (graph \(C\)) | \(I_{\mathrm{sku}}\
 
 **Runtime fix (already merged).** [vdom-harness PR #10](https://github.com/keejkrej/vdom-harness/pull/10) (2026-08-19): “Gate \(I_{\mathrm{loop}}\): wait-hit tasks keep \(C_0\)”. Mixed batch: wait+hit served on \(C_0\), miss / \(I_{\mathrm{loop}}\) served on \(C_1\). Logged as `applyScope {waitKept, looped}`. Host fallback `applyILoop` uses the same gate. Mock \(0\to 0.5\to 1.0\) still holds. That gate is clause 1 of Lemma 7.9.
 
-**Post-gate hang licenses \(I_{\mathrm{sku}}\) (evidence for the rule; do not lead).** Live 0731, 2026-08-20, after the wait-hit gate, same \(39+44\), 1 trial, max-rounds 1. Round 0: 39 completed-miss (Obs \(I_{\mathrm{loop}}\)); 44 hung (`taskPHit` null, skipped `44:t0:timeout`, reward null, nmsg 0 — not a measured 0). Runtime still emitted \(I_{\mathrm{loop}}\)+hung unless `loopExhausted` (type error vs Lemma 7.9 clause 2; that falsifies the split if left in place). `applyScope waitKept=[] looped=[39,44]`: no wait-hit, so the gate behaved. Round 1: 44 completed (hang \(\to\) finished miss) under a cancel attractor. The hang is an incomplete episode: \(I_{\mathrm{loop}}\) on empty traces is unidentified; the available cell is \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) because we cannot train. That is not the paper's contribution. `servingPaused=false`. If later serving does not use 0813, there was no jump. Do not invent post-mount numbers. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). JSON: `experiments/improve-live-0731-self-3944-postgate.json`. See `paper/NOTES_ARM_CHOICE.md`.
+**Post-gate hang licenses \(I_{\mathrm{sku}}\) (evidence for the rule; do not lead).** Live 0731, 2026-08-20, after the wait-hit gate, same \(39+44\), 1 trial, max-rounds 1. Round 0: 39 completed-miss (Obs \(I_{\mathrm{loop}}\)); 44 hung (`taskPHit` null, skipped `44:t0:timeout`, reward null, nmsg 0 — not a measured 0). The controller log is [vdom-harness PR #11](https://github.com/keejkrej/vdom-harness/pull/11): hung-first, 39 \(I_{\mathrm{loop}}\) / 44 \(I_{\mathrm{sku}}\) / `waitKept` empty. The hang is an incomplete episode: \(I_{\mathrm{loop}}\) on empty traces is unidentified; the available cell is \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) because we cannot train. That is not the paper's contribution. `servingPaused=false`. If later serving does not use 0813, there was no jump. Do not invent post-mount numbers. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). JSON: `experiments/improve-live-0731-self-3944-postgate.json`. See `paper/NOTES_ARM_CHOICE.md`.
 
 Mock closed loop \(0\to 0.5\to 1.0\) on official `update_task_1` / `impossible_task_1` is a **protocol unit test**, not an ICLR result.
 
