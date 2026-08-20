@@ -1,21 +1,15 @@
 /**
- * Self-observation and dual intervention on (C vs f_θ).
+ * Self-observation and two licensed edits on different coordinates.
  *
- *   Obs types the failure and chooses which factor to intervene on.
- *   I_loop mutates C on the fast clock (same SKU, servingPaused=false).
- *   Slow clock: gated jump of f_θ, serving unpaused.
- *   Available actuator on this stack: I_sku catalog rebind 0731→0813
- *   because we cannot train. That is a cell, not the claim.
- *   spawn_trainer is unimplemented. SKU swap alone is not novel.
- *   Do not sell p_hit(0813) − p_hit(0731).
+ *   I_loop mutates graph C (same S).
+ *   I_sku gated-rebinds decoder pointer S (same C).
+ *   License for the slow arm is an incomplete episode, not price.
+ *   Catalog rebind 0731→0813 is the implemented actuator, not the claim.
+ *   spawn_trainer writes neither coordinate.
  *
  * Typed rule: paper/FRAMEWORK.md Lemma 7.9
- *   hit → wait
- *   incomplete (hung / crash / no-write) → slow f_θ actuator (I_sku here)
- *   completed-miss ∧ attractor → I_loop
- * Extra H is not an arm.
  */
-import type { Control, StepTrace } from "./types.js";
+import type { Control, SlowPointer, StepTrace } from "./types.js";
 
 export type Intervention =
   | "graph_mutation"
@@ -194,15 +188,17 @@ export function chooseIntervention(obs: ObsFeatures, job?: TrainerJob): Interven
   return "I_sku";
 }
 
-/** Slow clock: I_sku request does not change the bound SKU. Gated mount rebinds. */
+/** Fast arm writes C only. Slow request writes neither. Gated mount writes S only. */
 export function applyIntervention(
   C: Control,
+  S: SlowPointer,
   action: Intervention,
   job?: TrainerJob,
-): { C: Control; job?: TrainerJob } {
+): { C: Control; S: SlowPointer; job?: TrainerJob } {
   if (action === "I_sku" || action === "catalog_rebind") {
     return {
       C,
+      S,
       job: job ?? {
         id: "sku-1",
         status: "running",
@@ -211,20 +207,20 @@ export function applyIntervention(
     };
   }
   if (action === "spawn_trainer") {
-    // Related work / unimplemented future. Not the claim. Does not write θ.
-    return { C, job: job ?? { id: "job-1", status: "running" } };
+    return { C, S, job: job ?? { id: "job-1", status: "running" } };
   }
   if ((action === "mount_sku" || action === "mount_adapter") && job?.resultModelId) {
     return {
-      C: { ...C, modelId: job.resultModelId, adapterId: job.artifactId },
+      C,
+      S: { ...S, modelId: job.resultModelId, adapterId: job.artifactId },
       job: { ...job, status: "ready" },
     };
   }
   if (action === "rollback") {
-    return { C: { ...C, adapterId: undefined }, job };
+    return { C, S: { ...S, adapterId: undefined }, job };
   }
   if (action === "graph_mutation") {
-    return { C: { ...C, graphId: C.graphId + "-mutated" }, job };
+    return { C: { ...C, graphId: C.graphId + "-mutated" }, S, job };
   }
-  return { C, job };
+  return { C, S, job };
 }

@@ -1,13 +1,14 @@
 /**
  * Factored transition kernel
  *
- *   X_{n+1} ∼ K_C(· | X_n)
+ *   X_{n+1} ∼ K_{C,S}(· | X_n)
  *
- *   1. a     ∼ P^gen_C(· | H, M)     = ∫ P^dec_C(a | ℓ̃) P^num(dℓ̃ | f_θ(H,M), C)
+ *   1. a     ∼ P^gen_{C,S}(· | H, M)
  *   2. (E,o) ∼ P^env(· | E, a)
  *   3. M     ∼ P^mem_C(· | M, H, a, o)
  *   4. H     = append(H, a, o)          (Dirac)
- *   5. C     ∼ P^ctrl(· | C, traces)    (often Dirac)
+ *   5. C     ∼ P^fast(· | C, traces)    (does not write S)
+ *   6. S     = S                       (frozen on the fast clock)
  */
 import type {
   Action,
@@ -156,7 +157,7 @@ export function stepKernel(spec: KernelSpec, state: HybridState, traces: StepTra
   };
 
   return {
-    next: { H, M, E, C },
+    next: { H, M, E, C, S: state.S },
     trace,
   };
 }

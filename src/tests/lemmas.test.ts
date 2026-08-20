@@ -5,7 +5,7 @@ import { applyValidator, decodeAction, gapSensitivityBound, perturbLogits, stepK
 import { argmax, mulberry32, top2Gap } from "../rng.js";
 import { CALCULATOR, WORD_REVERSE } from "../tasks.js";
 import { createProvider, openRouterKey } from "../openrouter.js";
-import { defaultControl } from "../types.js";
+import { defaultControl, defaultSlowPointer } from "../types.js";
 import { rollout } from "../experiments.js";
 import { applyIntervention, SKU_CELL, chooseIntervention, decideArm, observe } from "../observe.js";
 import type { TrainerJob } from "../observe.js";
@@ -100,7 +100,7 @@ test("kernel step tags channels", () => {
   assert.ok(trace.channels.includes("num"));
 });
 
-test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
+test("Obs writes a critique; I_loop writes C only; mount writes S only", () => {
   const traces = [
     {
       n: 0,
@@ -114,22 +114,26 @@ test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
     },
   ];
   const obs = observe(traces, 0);
-  assert.ok(obs.critique.includes("loop mutation") || obs.critique.includes("spawn"));
+  assert.ok(obs.critique.includes("loop mutation") || obs.critique.includes("I_loop"));
   const action = chooseIntervention(obs);
   assert.equal(action, "graph_mutation");
-  const C0 = defaultControl({ modelId: "toy-naive", graphId: "one-shot" });
-  const afterLoop = applyIntervention(C0, "graph_mutation");
-  assert.equal(afterLoop.C.modelId, "toy-naive");
+  const C0 = defaultControl({ graphId: "one-shot" });
+  const S0 = defaultSlowPointer({ modelId: "toy-naive" });
+  const afterLoop = applyIntervention(C0, S0, "graph_mutation");
+  assert.equal(afterLoop.S.modelId, "toy-naive");
+  assert.equal(afterLoop.C.graphId, "one-shot-mutated");
   assert.notEqual(afterLoop.C.graphId, C0.graphId);
 
-  const spawned = applyIntervention(C0, "spawn_trainer");
-  assert.equal(spawned.C.modelId, "toy-naive");
-  assert.equal(spawned.job?.status, "running");
+  const requested = applyIntervention(C0, S0, "I_sku");
+  assert.equal(requested.S.modelId, "toy-naive");
+  assert.equal(requested.C.graphId, C0.graphId);
+  assert.equal(requested.job?.status, "running");
 
   const ready = { id: "job-1", status: "ready" as const, artifactId: "a1", resultModelId: "adapted:a1" };
-  const mounted = applyIntervention(C0, "mount_sku", ready);
-  assert.equal(mounted.C.modelId, "adapted:a1");
-  assert.equal(mounted.C.adapterId, "a1");
+  const mounted = applyIntervention(C0, S0, "mount_sku", ready);
+  assert.equal(mounted.S.modelId, "adapted:a1");
+  assert.equal(mounted.S.adapterId, "a1");
+  assert.equal(mounted.C.graphId, C0.graphId);
 });
 
 test("Lemma 7.9: typed Obs arm is wait | I_loop | I_sku", () => {

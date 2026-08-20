@@ -4,13 +4,13 @@
 
 **Accompanying implementation.** [vdom-harness](https://github.com/keejkrej/vdom-harness) is the runtime submitted with this paper (not a side project, not related-work-only): a self-observing agent that types its own failure and intervenes on \(C\) or on \(f_\theta\). TypeScript virtual DOM: topology is a value; a reconciler mounts / updates / unmounts. This document does not clone that repo. It writes the process of which vdom is the control. Papers, blogs, GitHub, X, and other agents are inputs to that runtime, not the product.
 
-**Thesis (author lock).** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C)\) with kernel \(K_C\). Self-observation types the failure and chooses *which factor* to intervene on. Dual intervention (Definition 6.4): \(I_{\mathrm{loop}}\) mutates \(C\) on the fast clock (same SKU, serving does not pause); the slow clock is a gated jump of \(f_\theta\), serving unpaused. Wait is the identity. Incomplete episodes (hang, no-write, crash) license the slow \(f_\theta\) actuator. Completed misses with a policy / topology attractor license \(I_{\mathrm{loop}}\). Hits wait. Accumulating \(H\) is neither arm.
+**Thesis (author lock).** A serving agent is a **controlled hybrid Markov process** \(X=(H,M,E,C,S)\) with kernel \(K_{C,S}\). \(C\) is the *fast* graph (AgentGraph, decoding knobs). \(S\) is the *slow* decoder pointer (\(f_\theta\) / SKU). They are different coordinates on different clocks. Self-observation types the failure and chooses which coordinate to edit. Two licensed edits: \(I_{\mathrm{loop}}\) mutates \(C\) (same \(S\)); the slow arm gated-rebinds \(S\) (same \(C\)). Wait is the identity. **License for the slow arm is an incomplete episode (hang / no-write / crash), not “a more expensive checkpoint.”** Price is not a coordinate. Completed miss + attractor \(\to I_{\mathrm{loop}}\). Hits wait. Accumulating \(H\) is neither arm.
 
-The implemented slow actuator *on this stack* is a catalog rebind \(I_{\mathrm{sku}}\) (`deepseek/deepseek-v4-flash-0731` \(\to\) `deepseek/deepseek-v4-pro-0813`) because we cannot train. **That actuator is a cell, not the claim.** SKU swap alone is not the contribution: runtime model swapping is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). Trainer-spawn is unimplemented. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not title this paper as model routing.
+Catalog rebind \(I_{\mathrm{sku}}\) (`0731` \(\to\) `0813`) is the *implemented* slow actuator on this stack, because we cannot train. **A cell, not the title claim.** `0813` is one available value of \(S\), not the license. SKU swap alone is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). The gate is eval / first-passage (Definition 5.3), not “0813 exists” (that would be always-mount). Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not title this paper as model routing.
 
-Two clocks (Lemma 7.7): `servingPaused=false`; jump only on gated mount; later serving must use the new \(f_\theta\) or there was no jump.
+Two clocks (Lemma 7.7): `servingPaused=false`; jump of \(S\) only on gated mount; later serving must use the new \(S\) or there was no jump.
 
-**What this paper is not.** SOTA on \(\tau^2\). A Pro-vs-Flash leaderboard. LoRA / spawn-trainer as the implemented arm. Mock \(0\to 0.5\to 1.0\) as a result. \(0.7\to 0.9\) in the abstract lead. A routing paper.
+**What this paper is not.** SOTA on \(\tau^2\). A Pro-vs-Flash leaderboard. Async weight updates / LoRA / spawn-trainer. Mock \(0\to 0.5\to 1.0\) as a result. \(0.7\to 0.9\) in the abstract lead. A routing paper. One idea with two names (`improveLoop` writing a bag that contains both graph and SKU).
 
 ---
 
@@ -46,18 +46,21 @@ is the wrong *primary* language here. The state is not a point on a Riemannian m
 
 ## §1 State space
 
-**Definition 1.1 (hybrid state).** At step \(n\),
+**Definition 1.1 (hybrid state; two control coordinates).** At step \(n\),
 
 \[
-X_n = (H_n, M_n, E_n, C_n) \in \mathcal{X} = \mathcal{V}^* \times \mathcal{M} \times \mathcal{E} \times \mathcal{C}.
+X_n = (H_n, M_n, E_n, C_n, S_n) \in \mathcal{X} = \mathcal{V}^* \times \mathcal{M} \times \mathcal{E} \times \mathcal{C} \times \mathcal{S}.
 \]
 
-| Symbol | Space | Meaning |
-| --- | --- | --- |
-| \(H_n\) | \(\mathcal{V}^*\) | Context / token-or-event history. Finite words over a vocabulary \(\mathcal{V}\) (or a countable event alphabet that includes tool calls and observations). |
-| \(M_n\) | \(\mathcal{M}\) | Structured memory: vdom `memoryStore`, traces, persistence. Not an embedding. |
-| \(E_n\) | \(\mathcal{E}\) | Environment / tool world. May be replayable (simulated) or live. |
-| \(C_n\) | \(\mathcal{C}\) | *Control configuration*: the AgentGraph plus decoding knobs (temperature, constraints, validators, commit gates) **and the bound model pointer (SKU)** (`PhysicalNode.provider` / `n.model`), plus mounted capabilities. |
+If the model pointer sits *inside* fast \(C\) and both arms are `improveLoop` writing \(C\), that is one idea with two names. It is not. \(C\) and \(S\) are different coordinates on different clocks.
+
+| Symbol | Space | Clock | Meaning |
+| --- | --- | --- | --- |
+| \(H_n\) | \(\mathcal{V}^*\) | fast | Context / token-or-event history. |
+| \(M_n\) | \(\mathcal{M}\) | fast | Structured memory: vdom `memoryStore`, traces, persistence. |
+| \(E_n\) | \(\mathcal{E}\) | fast | Environment / tool world. |
+| \(C_n\) | \(\mathcal{C}\) | **fast** | *Graph control*: AgentGraph plus decoding knobs (temperature, constraints, validators, commit gates, mounted capabilities). **Does not contain the decoder pointer.** \(I_{\mathrm{loop}}\) writes this coordinate only. |
+| \(S_n\) | \(\mathcal{S}\) | **slow** | *Decoder pointer*: the bound \(f_\theta\) / SKU (`PhysicalNode.provider` / `n.model`). Frozen on the fast clock. The slow arm gated-rebinds this coordinate only. Price is not a coordinate of \(\mathcal{S}\). `0813` is one available value, not the license. |
 
 **Definition 1.2 (coarse field).** An optional projection \(z_n = \Pi(X_n)\in\mathbb{R}^d\) (embedding summary, score vector) is a *statistic*, never the true state. Fokker–Planck statements, if any, are about the law of \(z_n\), and only after a mixing hypothesis that must be stated.
 
@@ -67,7 +70,7 @@ X_n = (H_n, M_n, E_n, C_n) \in \mathcal{X} = \mathcal{V}^* \times \mathcal{M} \t
 f_\theta : \mathcal{V}^* \to \mathbb{R}^{|\mathcal{V}|}, \qquad \ell = f_\theta(H)
 \]
 
-is a deterministic logit map for the bound SKU. Numerical noise may perturb \(\ell\); decoding samples a token (or an action string) from the perturbed logits. The SKU is constant *inside* a generation. \(I_{\mathrm{sku}}\) is a jump of the bound pointer and lives in \(P^{\mathrm{ctrl}}\), not in \(f_\theta\).
+is a deterministic logit map for the bound pointer \(S\). Numerical noise may perturb \(\ell\); decoding samples a token (or an action string) from the perturbed logits. \(S\) is constant *inside* a generation and across fast serving steps. A gated rebind is a jump \(S\mapsto S'\) on the slow clock. It does not write \(C\).
 
 ---
 
@@ -75,21 +78,22 @@ is a deterministic logit map for the bound SKU. Numerical noise may perturb \(\e
 
 One agent step is a *composition*, not a diffusion.
 
-**Definition 2.1 (factored step).** Given \(X_n=(H_n,M_n,E_n,C_n)\),
+**Definition 2.1 (factored step).** Given \(X_n=(H_n,M_n,E_n,C_n,S_n)\),
 
-1. **Generation.** \(a_{n+1}\sim P^{\mathrm{gen}}_{C_n}(\cdot\mid H_n,M_n)\) (text and/or tool calls).
+1. **Generation.** \(a_{n+1}\sim P^{\mathrm{gen}}_{C_n,S_n}(\cdot\mid H_n,M_n)\) (text and/or tool calls). Uses \(f_{S_n}\) under graph \(C_n\).
 2. **Environment.** \((E_{n+1},o_{n+1})\sim P^{\mathrm{env}}(\cdot\mid E_n,a_{n+1})\).
 3. **Memory.** \(M_{n+1}\sim P^{\mathrm{mem}}_{C_n}(\cdot\mid M_n,H_n,a_{n+1},o_{n+1})\).
 4. **Context.** \(H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})\) (Dirac given those arguments).
-5. **Control.** \(C_{n+1}\sim P^{\mathrm{ctrl}}(\cdot\mid C_n,\mathrm{traces}_n)\). In vdom this is often Dirac: a scientist emits a graph; `reconcile` is a deterministic function of \((\mathrm{prev},\mathrm{next})\).
+5. **Fast control.** \(C_{n+1}\sim P^{\mathrm{fast}}(\cdot\mid C_n,\mathrm{Obs}(\mathrm{traces}_n))\). Graph mutation / wait. **Does not write \(S\).**
+6. **Slow pointer.** \(S_{n+1}=S_n\) unless a gated mount fires on the slow clock. **Does not write \(C\).**
 
 **Definition 2.2 (controlled hybrid Markov process).** The composition is a kernel
 
 \[
-X_{n+1} \sim K_{C_n}(\cdot\mid X_n)
+X_{n+1} \sim K_{C_n,S_n}(\cdot\mid X_n)
 \]
 
-on \(\mathcal{X}\). The process \((X_n)_{n\ge 0}\) is Markov on \(\mathcal{X}\) with control-dependent kernel \(K_C\). If \(C_{n+1}\) is a (possibly random) function of traces, the pair \((X_n)\) remains Markov on \(\mathcal{X}\) because \(C_n\subset X_n\).
+on \(\mathcal{X}\). On the fast clock \(S\) is a parameter, not a field of \(C\). The process is Markov on \(\mathcal{X}\) with kernel \(K_{C,S}\).
 
 This is a *controlled hybrid Markov process*: discrete event time; mixed discrete / structured / external coordinates; control in the state.
 
@@ -114,7 +118,7 @@ with \(\varepsilon\) small and *not* white in time (the same kernel / batch / de
 **Definition 3.4 (generation factorization).**
 
 \[
-P^{\mathrm{gen}}(a\mid H,M,C) = \int P^{\mathrm{dec}}_C(a\mid \tilde{\ell})\, P^{\mathrm{num}}(\mathrm{d}\tilde{\ell}\mid f_\theta(H),C).
+P^{\mathrm{gen}}(a\mid H,M,C,S) = \int P^{\mathrm{dec}}_C(a\mid \tilde{\ell})\, P^{\mathrm{num}}(\mathrm{d}\tilde{\ell}\mid f_S(H),C).
 \]
 
 **Measurement (engineering interface, not a theorem).**
@@ -158,7 +162,7 @@ Numerical noise is a *boundary layer* on near-ties, not a volatility \(\sigma(x)
 
 **What to invent (this framework).**
 
-- Typed-noise hybrid kernels \(K_C = P^{\mathrm{gen}}_C\otimes P^{\mathrm{env}}\otimes P^{\mathrm{mem}}_C\otimes P^{\mathrm{ctrl}}\).
+- Typed-noise hybrid kernels \(K_{C,S} = P^{\mathrm{gen}}_{C,S}\otimes P^{\mathrm{env}}\otimes P^{\mathrm{mem}}_C\otimes P^{\mathrm{fast}}\). \(S\) is a parameter of the fast kernel, not a field of \(C\).
 - Coupling Lyapunov / cascade exponents (Hamming on prefixes, not TV — TV Lipschitz of any kernel is \(\le 1\)).
 - Control theory for decoding policies (\(\tau\), grammars, validators as Doob / rejection).
 - Selection kernels: best-of-\(k\) is a nonlinear map on empirical measures (McKean–Vlasov-like).
@@ -170,7 +174,7 @@ Numerical noise is a *boundary layer* on near-ties, not a volatility \(\sigma(x)
 
 **Definition 5.1 (trajectory).** \(\mathbf{X}=(X_n)_{n\le T}\) and the action-observation path \((a_n,o_n)\).
 
-**Definition 5.2 (path measure).** \(\mathbb{P}_C\) is the law of \(\mathbf{X}\) on \(\mathcal{X}^{\mathbb{N}}\), parameterized by control \(C\) (or by a control process if \(C_n\) jumps).
+**Definition 5.2 (path measure).** \(\mathbb{P}_{C,S}\) is the law of \(\mathbf{X}\) on \(\mathcal{X}^{\mathbb{N}}\), parameterized by the pair \((C,S)\). Not by \(C\) alone (that would put \(S\subset C\)).
 
 **Definition 5.3 (first passage).** Let \(S,F\subset\mathcal{X}\) be disjoint measurable success / failure sets. Hitting times
 
@@ -178,7 +182,7 @@ Numerical noise is a *boundary layer* on near-ties, not a volatility \(\sigma(x)
 \tau_S:=\inf\{n:X_n\in S\},\qquad \tau_F:=\inf\{n:X_n\in F\},
 \]
 
-hit probability \(p_{\mathrm{hit}}=\mathbb{P}_C(\tau_S<\tau_F)\), and expected cost \(\mathbb{E}_C[\tau_S\wedge\tau_F\wedge T]\). This is what builders already measure (`runBenchmark` score, timeout). Name it.
+hit probability \(p_{\mathrm{hit}}=\mathbb{P}_{C,S}(\tau_S<\tau_F)\), and expected cost \(\mathbb{E}_{C,S}[\tau_S\wedge\tau_F\wedge T]\). This is what builders already measure (`runBenchmark` score, timeout). Name it. The path measure is parameterized by the pair, not by \(C\) alone.
 
 **Definition 5.4 (cascade / coupling).** Let \(X_0,X_0'\) differ by one memory bit or one token. Couple the kernels. TV of the *laws* cannot expand: \(\|\mu K-\nu K\|_{\mathrm{TV}}\le\|\mu-\nu\|_{\mathrm{TV}}\). Expansion is visible in a *weaker* metric — Hamming on prefixes, or a Wasserstein on \(\Pi(X)\). Write
 
@@ -197,7 +201,7 @@ The *cascade exponent* is the local growth rate of \(\rho_n\) before coupling. A
 
 ## §6 Self-observation and dual intervention
 
-This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is that a vdom agent watches its own path measure and then edits either the loop or the weights.
+This is the reason the framework exists. Typed noise and the factored kernel are the *language*. The *act* is that a vdom agent watches its own path measure and then edits either graph \(C\) or decoder pointer \(S\). Not a trainer. Not a price.
 
 **Definition 6.1 (self-observation).** Let \(\mathrm{traces}_n = (a_i,o_i,\text{channel tags})_{i\le n}\) together with first-passage proxies \((\hat\tau_S,\hat\tau_F,\hat p_{\mathrm{hit}})\) and a typed completion
 
@@ -219,41 +223,43 @@ M \leftarrow M \cup \{\texttt{obs}: \mathrm{Obs}(\mathrm{traces},\hat\tau_S,\hat
 
 This is a memory write, typically Dirac given traces. It is *not* a fourth noise channel. Incomplete episodes stay in the task set and are not silent zeros. Attractor flags (invented policy, extra write, tool thrash) and wait-hit are features of \(\mathrm{Obs}\), not extra noise. Examples: "\(p_{\mathrm{hit}}=0\) on the fixture", "tool-thrash on `search`", "\(\tau_S\) exceeded budget", "hung \(>8\) min", "transfer with zero required writes", "near-tie rate high (numerical channel)". In vdom this is `traces` plus `runBenchmark.score` plus episode completion. The typed arm is Lemma 7.9.
 
-**Definition 6.2 (control from observation).**
+**Definition 6.2 (two licensed edits, different coordinates).**
 
 \[
-C_{n+1} \sim P^{\mathrm{ctrl}}(\cdot \mid C_n, \mathrm{Obs}(\mathrm{traces}_n)).
+C_{n+1} \sim P^{\mathrm{fast}}(\cdot \mid C_n, \mathrm{Obs}(\mathrm{traces}_n)),\qquad
+S_{n+1} =
+\begin{cases}
+S' & \text{on }\{T_{\mathrm{adapt}}=n\}\cap\{g=\mathrm{mount}\},\\
+S_n & \text{otherwise.}
+\end{cases}
 \]
 
-The support of (P^{\mathrm{ctrl}}) is a small discrete set of interventions, not an open-ended "do something":
+\(P^{\mathrm{fast}}\) writes \(C\) only. The slow map writes \(S\) only. They are not two names for `improveLoop` on one bag.
 
-| Intervention | What it does to \(K\) |
-| --- | --- |
-| `graph_mutation` | Scientist emits (G'). `reconcile((G,G'))` is a deterministic map. The *composition* of (K) changes (critics, refine, extra agents, validators). Same SKU. Fast arm \(I_{\mathrm{loop}}\). |
-| `I_sku` | **Available \(f_\theta\) actuator (a cell, not the claim).** Catalog rebind because we cannot train. Request `deepseek/deepseek-v4-pro-0813`. Serving continues on `0731` (`servingPaused=false`). No immediate jump. SKU swap alone is not novel (FrugalGPT, RouteLLM, OpenRouter fallbacks). |
-| `mount_sku` | Allowed only after the requested SKU is ready *and* an eval gate passes. Rebind `PhysicalNode.provider` / `n.model`. Jump iff *later serving uses the new SKU*. Otherwise there was no jump. |
-| `rollback` | Unmount. Restore the previous SKU pointer. Kernel returns to (K_C\). |
-| `capability_mount` | Change the tool signature of (P^{\mathrm{env}}) (gated, same sandbox). |
-| `commit` / `wait` | Optional stopping, or Dirac identity on (C\). On a mixed batch, wait-hit keeps \(C_0\); only miss / \(I_{\mathrm{loop}}\) receives \(C_1\) (vdom-harness PR #10). An unscoped global mount onto a wait-hit is an illegal apply. |
-| `spawn_trainer` | Related work / unimplemented future. Not the claim. Not an arm of this paper. |
+| Intervention | Coordinate | What it does |
+| --- | --- | --- |
+| `graph_mutation` (\(I_{\mathrm{loop}}\)) | \(C\) (fast) | Scientist emits \(G'\). `reconcile` is deterministic. Same \(S\). Serving does not pause. |
+| `I_sku` (request) | none yet | Request one available value of \(S\) (on this stack, `0813`). Serving continues on current \(S\) (`servingPaused=false`). **License is incomplete episode, not price.** |
+| `mount_sku` | \(S\) (slow) | Allowed only if the *eval / first-passage gate* passes (Definition 5.3 / Lemma 7.8). Rebind `PhysicalNode.provider` / `n.model`. Jump iff later serving uses \(S'\). “0813 exists” is not a gate (that is always-mount). |
+| `rollback` | \(S\) | Restore the previous decoder pointer. \(C\) unchanged. |
+| `capability_mount` | \(C\) | Change the tool signature of \(P^{\mathrm{env}}\) (gated, same sandbox). |
+| `wait` | neither | Dirac identity. Wait-hit keeps \(C_0\) and \(S_0\) (vdom-harness PR #10). |
 
 **Definition 6.3 (two clocks).**
 
-- **Fast clock** (n\in\mathbb{N}\): the serving kernel (K_C\). Sampling and environmental noise live here. The bound SKU is frozen inside a generation and across serving steps until a gated slow jump. `servingPaused=false`.
-- **Slow clock** (\sigma\in\mathbb{N}\): a gated jump of \(f_\theta\) at an optional time \(T_{\mathrm{adapt}}\). Serving *does not block* on \(\sigma\) (`servingPaused=false`). On this stack the available actuator is a catalog rebind (\(I_{\mathrm{sku}}\)) because we cannot train. Trainer-spawn is unimplemented.
+- **Fast clock** \(n\in\mathbb{N}\): serving kernel \(K_{C,S}\) with \(S\) frozen. `servingPaused=false`. \(I_{\mathrm{loop}}\) lives here.
+- **Slow clock** \(\sigma\in\mathbb{N}\): gated jump of \(S\) at optional time \(T_{\mathrm{adapt}}\). Serving does not block. Implemented actuator: catalog rebind. Not the title claim.
 
-On (\{T_{\mathrm{adapt}}=n\}\) the gate (g(A_\sigma,\text{fixture})\in\{\mathrm{mount},\mathrm{reject}\}) is an empirical first-passage test (Definition 5.3). Mount is a jump (C\mapsto C'\) that rebinds `PhysicalNode.provider` / `n.model`. Reject is the identity on (C\). The fast process is piecewise homogeneous: (K_C\) until a gated jump, then (K_{C'}\). Jump only on gated mount. Later serving must use the new \(f_\theta\) or there was no jump.
+On \(\{T_{\mathrm{adapt}}=n\}\) the gate \(g(S',\mathrm{fixture})\in\{\mathrm{mount},\mathrm{reject}\}\) is empirical first-passage (Definition 5.3), **not** \(\mathbf{1}_{\{S'\text{ exists}\}}\). Reject is the identity on \(S\). Later serving must use \(S'\) or there was no jump.
 
-**Definition 6.4 (dual intervention on \(C\) vs \(f_\theta\)).** After \(\mathrm{Obs}\), \(P^{\mathrm{ctrl}}\) chooses which *factor* of the path measure to intervene on. The two licensed non-identity arms are:
+**Definition 6.4 (dual intervention on \(C\) vs \(S\)).** After \(\mathrm{Obs}\), two licensed non-identity edits:
 
-1. **On \(C\) (fast): \(I_{\mathrm{loop}}\).** Mutate the AgentGraph / \(C\). Same \(f_\theta\) / same SKU. Serving does not pause (`servingPaused=false`). License: a *completed* miss with a policy or topology attractor (Proposition 7.8a, Lemma 7.9).
-2. **On \(f_\theta\) (slow): gated jump.** Serving continues on the current \(f_\theta\). Mount only if the gate passes. The factor jumped iff later serving uses the new \(f_\theta\). License: an *incomplete* episode (hang, no-write, crash). **Available actuator on this stack:** \(I_{\mathrm{sku}}\), a catalog rebind `0731` \(\to\) `0813`, because we cannot train. Trainer-spawn is unimplemented.
+1. **\(I_{\mathrm{loop}}\) writes \(C\).** Same \(S\). Fast clock. License: completed miss + policy / topology attractor.
+2. **Slow arm writes \(S\).** Same \(C\). Gated rebind of the decoder pointer. License: **incomplete episode (hang / no-write / crash).** Not “more expensive checkpoint.” Price is not a coordinate. Available cell on this stack: \(I_{\mathrm{sku}}\), one value `0813`. SKU swap alone is not the contribution (FrugalGPT, RouteLLM, OpenRouter fallbacks).
 
-**SKU swap alone is not the contribution.** FrugalGPT, RouteLLM, and OpenRouter fallbacks already rebind a model pointer. This paper is not a routing paper. The contribution is that \(\mathrm{Obs}\) types the failure and chooses the factor. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\).
+Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Failed eval \(\Rightarrow\) no switch.
 
-Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoop`, `gateAdapter`, `gateCapability`, `unmountAdapterOnFailure`). Do not encode gold reservation IDs as the method; a policy node encodes rules.
-
-**Thesis (restated).** \(X=(H,M,E,C)\), \(K_C\). \(\mathrm{Obs}\) types the failure and chooses \(C\) vs \(f_\theta\). \(I_{\mathrm{sku}}\) is the available slow actuator, a cell. Not \(\tau^2\) SOTA. Not a Pro-vs-Flash leaderboard. Not LoRA. Not mock \(0\to 0.5\to 1.0\) as a result. Not \(0.7\to 0.9\) in the abstract lead. Not model routing.
+**Thesis (restated).** \(X=(H,M,E,C,S)\), \(K_{C,S}\). Typed \(\mathrm{Obs}\). Two licensed edits on different clocks. Catalog rebind is the implemented slow actuator, not the title. Not \(\tau^2\) SOTA. Not a routing paper. Not \(0.7\to 0.9\) in the abstract lead.
 
 ### Actuators available to (P^{\mathrm{ctrl}}) after Obs
 
@@ -279,7 +285,7 @@ Failed eval ⇒ no switch. Unmount ⇒ rollback. That is vdom PR #3 (`improveLoo
 
 ### Lemma 7.1 (greedy collapse)
 
-Assume (\tau=0\), the argmax of (f_\theta(H)\) is unique almost surely, (P^{\mathrm{num}}=\delta_{f_\theta(H)}\), and (P^{\mathrm{env}}\), (P^{\mathrm{mem}}\), (P^{\mathrm{ctrl}}\) are Dirac. Then (K_C(\cdot\mid x)=\delta_{\Phi(x)}\) for a deterministic map (\Phi:\mathcal{X}\to\mathcal{X}\). The process is an automaton. All residual randomness is environmental or a numerical tie.
+Assume \(\tau=0\), the argmax of \(f_S(H)\) is unique almost surely, \(P^{\mathrm{num}}=\delta_{f_S(H)}\), and \(P^{\mathrm{env}}\), \(P^{\mathrm{mem}}\), \(P^{\mathrm{fast}}\) are Dirac. Then \(K_{C,S}(\cdot\mid x)=\delta_{\Phi(x)}\) for a deterministic map \(\Phi:\mathcal{X}\to\mathcal{X}\). The process is an automaton. All residual randomness is environmental or a numerical tie. \(S\) is frozen.
 
 **Proof.** Unique argmax and (\tau=0\) give a Dirac decoder. Dirac env / mem / append / ctrl compose to a function. (\square\)
 
@@ -309,11 +315,11 @@ Let (A_1,\ldots,A_k\) be i.i.d. (\sim P^{\mathrm{dec}}\) and (A^\star=\arg\max_i
 
 A commit gate collapses an ensemble of (k\) particles to one trajectory. It raises (p_{\mathrm{hit}}\) iff the expected hit probability of the committed particle exceeds that of continuing the ensemble, net of compute.
 
-### Lemma 7.7 (serving / \(f_\theta\)-jump separation)
+### Lemma 7.7 (two clocks; request \(\neq\) rebind)
 
-While a slow \(f_\theta\) request is in flight, the fast process remains Markov with kernel \(K_C\) for the *pre-request* control \(C\). `servingPaused=false`. Artifact arrival is an optional exogenous time \(T_{\mathrm{adapt}}\). On \(\{T_{\mathrm{adapt}}=n\}\cap\{g=\mathrm{mount}\}\) the kernel switches to \(K_{C'}\) by rebinding `PhysicalNode.provider` / `n.model`; otherwise it does not. This is a piecewise-homogeneous hybrid Markov process. It is not a diffusion in \(\theta\). It is not SGD. On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813), a cell.
+While a slow request is in flight, the fast process remains Markov with kernel \(K_{C,S}\) for the *pre-request* pair \((C,S)\). \(S\) is frozen. `servingPaused=false`. Arrival is an optional exogenous time \(T_{\mathrm{adapt}}\). On \(\{T_{\mathrm{adapt}}=n\}\cap\{g=\mathrm{mount}\}\) the kernel switches to \(K_{C,S'}\) by rebinding `PhysicalNode.provider` / `n.model`; otherwise it does not. This is a piecewise-homogeneous hybrid Markov process. It is not a diffusion in \(\theta\). It is not SGD. It is not a trainer job. On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813), a cell.
 
-**Proof sketch.** The slow request does not mutate \(C\) at request time (Definition 6.2). The only \(C\)-changing map is the gated mount / rollback, which is a function of \((A_\sigma,\hat p_{\mathrm{hit}})\). \(f_\theta\) jumped iff later serving uses the new pointer. If later serving still uses 0731, there was no jump. \(\square\)
+**Proof sketch.** The slow request writes neither \(C\) nor \(S\) at request time (Definition 6.2). The only \(S\)-changing map is the gated mount / rollback, a function of first-passage (Definition 5.3), not of “the other SKU exists.” \(S\) jumped iff later serving uses the new pointer. If later serving still uses 0731, there was no jump. \(\square\)
 
 ### Lemma 7.8 (eval gate is empirical first-passage)
 
@@ -321,21 +327,21 @@ While a slow \(f_\theta\) request is in flight, the fast process remains Markov 
 
 ### Proposition 7.8a (two licensed arms; kernel factorization)
 
-Generation uses \(f_\theta\) *under* control \(C\). From Definition 3.4 / 2.1,
+Generation uses \(f_S\) *under* graph \(C\). From Definition 3.4 / 2.1,
 
 \[
-P^{\mathrm{gen}}_C(a\mid H,M)=\int P^{\mathrm{dec}}_C(a\mid\tilde\ell)\,P^{\mathrm{num}}(\mathrm{d}\tilde\ell\mid f_\theta(H),C).
+P^{\mathrm{gen}}_{C,S}(a\mid H,M)=\int P^{\mathrm{dec}}_C(a\mid\tilde\ell)\,P^{\mathrm{num}}(\mathrm{d}\tilde\ell\mid f_S(H),C).
 \]
 
-The path measure \(\mathbb{P}_C\) is therefore a function of the pair \((f_\theta,C)\), not of \(\theta\) alone and not of chat history \(H\) alone (\(H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})\) is Dirac given the step; accumulating \(H\) is not an arm).
+The path measure \(\mathbb{P}_{C,S}\) is a function of the pair \((C,S)\), not of \(C\) alone, not of a price, and not of chat history \(H\) alone (\(H_{n+1}=\mathrm{append}(H_n,a_{n+1},o_{n+1})\) is Dirac given the step; accumulating \(H\) is not an arm). If \(S\subset C\) and both arms write \(C\), this is one idea with two names.
 
-**Claim.** The support of \(P^{\mathrm{ctrl}}\) after \(\mathrm{Obs}\) needs (at least) two licensed non-identity arms.
+**Claim.** The support of \(P^{\mathrm{fast}}\) after \(\mathrm{Obs}\) needs (at least) two licensed non-identity arms on *different coordinates*.
 
-1. **Completed miss, attractor of \(C\).** The episode finished. There is a completed action-observation path. A metastable policy or tool attractor (invented policy, extra write, tool thrash) at fixed \(\theta\) is a failure of the composition \(K_C\), not of \(f_\theta\). Same \(\theta\); mutate \(C\). That is \(I_{\mathrm{loop}}\). Serving does not pause.
-2. **Incomplete episode.** Hang, no-write, or crash yields no completed path to edit. \(I_{\mathrm{loop}}\) on empty (or non-completing) traces is *unidentified*: there is no observed path measure of a finished miss on which a graph mutation is a well-posed intervention. That licenses the slow \(f_\theta\) actuator. Serving continues on the current \(f_\theta\) (`servingPaused=false`); mount only if the gate passes and later serving uses the new \(f_\theta\) (Lemma 7.7). Reject is the identity on \(C\). On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813) because we cannot train. That is a cell. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\).
+1. **Completed miss, attractor of \(C\).** The episode finished. There is a completed action-observation path. A metastable policy or tool attractor (invented policy, extra write, tool thrash) at fixed \(S\) is a failure of the composition \(K_{C,S}\) in the \(C\) factor. Same \(S\); mutate \(C\). That is \(I_{\mathrm{loop}}\). Serving does not pause.
+2. **Incomplete episode.** Hang, no-write, or crash yields no completed path to edit. **That is the license**, not “a more expensive checkpoint.” \(I_{\mathrm{loop}}\) on empty (or non-completing) traces is *unidentified*: there is no observed path measure of a finished miss on which a graph mutation is a well-posed intervention. Serving continues on the current \(S\) (`servingPaused=false`); mount only if the *eval / first-passage* gate passes and later serving uses \(S'\) (Lemma 7.7). “0813 exists” is always-mount, not a gate. Reject is the identity on \(S\). On this stack the available actuator is \(I_{\mathrm{sku}}\) (0731 \(\to\) 0813) because we cannot train. That is a cell. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Price is not a coordinate.
 3. **Neither arm is extra \(H\).** Appending context is coordinate (iv) of Definition 2.1. CL-Bench exploitable-poker ICL (Asawa et al., arXiv:2606.05661) measures gain \(g=r^{\mathrm{sf}}-r^{\mathrm{sl}}\) (stateful history vs the same system stateless). On poker the published curves overlap and accumulated state can hurt. That is a diagnostic that extra \(H\) is not \(I_{\mathrm{loop}}\), not a number we measured and not a SOTA claim.
 
-**Proof sketch.** Factorization (Definition 3.4) holds \(f_\theta\) fixed inside a generation. A completed path with an attractor of \(C\) is an identified intervention on \(P^{\mathrm{ctrl}}\) at that \(f_\theta\). An incomplete episode is not an identified intervention on \(C\): the scientist would be fitting a graph to a missing path. The two-clock construction (Definition 6.3, Lemma 7.7) is the residual: a gated jump of \(f_\theta\) off the serving kernel, or reject. Which actuator implements that jump is a cell. \(\square\)
+**Proof sketch.** Factorization (Definition 3.4) holds \(S\) fixed inside a generation and across the fast clock. A completed path with an attractor of \(C\) is an identified intervention on \(P^{\mathrm{fast}}\) at that \(S\). An incomplete episode is not an identified intervention on \(C\): the scientist would be fitting a graph to a missing path. The two-clock construction (Definition 6.3, Lemma 7.7) is the residual: a gated rebind of \(S\), or reject. Which actuator implements that rebind is a cell. \(\square\)
 
 ### Lemma 7.9 (typed \(\mathrm{Obs}\) decision rule)
 
@@ -350,21 +356,22 @@ A map, not a vibe. Cascade exponent \(\lambda\) of \(\rho_n\) (Definition 5.4) i
 | \(\mathrm{wait\text{-}hit}\) | \(\{0,1\}\) | \(\mathrm{completion}=\mathrm{hit}\) and \(\mathrm{Obs}\) selected \(\mathrm{wait}\) (per-task). |
 | \(\hat p_{\mathrm{hit}}\) | \([0,1]\) | Empirical first-passage (Definition 5.3). |
 
-**Output.** \(\delta\in\{\mathrm{wait},\,I_{\mathrm{loop}},\,\text{slow }f_\theta\text{ actuator}\}\). On this stack the slow actuator is \(I_{\mathrm{sku}}\).
+**Output.** \(\delta\in\{\mathrm{wait},\,I_{\mathrm{loop}},\,I_{\mathrm{sku}}\}\). Two licensed edits. Catalog rebind is the implemented slow actuator, not the title claim.
 
 **Rule \(\delta\)** (first match):
 
-1. If \(\mathrm{wait\text{-}hit}=1\), or \(\mathrm{completion}=\mathrm{hit}\) and \(\hat p_{\mathrm{hit}}=1\): \(\delta=\mathrm{wait}\). Identity on \(C\). An unscoped \(I_{\mathrm{loop}}\) onto a wait-hit is an illegal apply.
-2. If \(\mathrm{completion}=\mathrm{incomplete}\) (hang / crash / no-write): \(\delta=\) slow \(f_\theta\) actuator. Serving stays on the current \(f_\theta\) (`servingPaused=false`; Lemma 7.7). \(I_{\mathrm{loop}}\) on empty traces is unidentified (Proposition 7.8a). Gate may reject. Available cell: \(I_{\mathrm{sku}}\), 0731 \(\to\) 0813, because we cannot train.
-3. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and at least one attractor flag is 1: \(\delta=I_{\mathrm{loop}}\). Same \(f_\theta\); mutate \(C\); serving does not pause.
-4. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and every attractor flag is 0: \(\delta=\) slow \(f_\theta\) actuator. The miss is not an identified failure of \(C\).
+1. If \(\mathrm{wait\text{-}hit}=1\), or \(\mathrm{completion}=\mathrm{hit}\) and \(\hat p_{\mathrm{hit}}=1\): \(\delta=\mathrm{wait}\). Identity on \(C\) and on \(S\). An unscoped \(I_{\mathrm{loop}}\) onto a wait-hit is an illegal apply.
+2. If \(\mathrm{completion}=\mathrm{incomplete}\) (hang / crash / no-write): \(\delta=I_{\mathrm{sku}}\). **License is incompleteness**, not price and not “0813 exists.” Serving stays on the current \(S\) (`servingPaused=false`; Lemma 7.7). \(I_{\mathrm{loop}}\) on empty traces is unidentified (Proposition 7.8a). Gate is eval / first-passage and may reject. Available cell: catalog rebind, 0731 \(\to\) 0813, because we cannot train.
+3. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and at least one attractor flag is 1: \(\delta=I_{\mathrm{loop}}\). Same \(S\); mutate \(C\); serving does not pause.
+4. If \(\mathrm{completion}=\mathrm{completed\text{-}miss}\) and every attractor flag is 0: \(\delta=I_{\mathrm{sku}}\). The miss is not an identified failure of \(C\). Still a rebind of \(S\), not a price comparison.
 
 Wait is the identity. Accumulating \(H\) is not in the output type.
 
 **What would falsify the split.**
 
-- A *completed miss* that only moves after \(\theta\) changes (no \(C\) mutation suffices). Then the miss was not a \(C\)-attractor; clause 3 licensed the wrong arm.
-- An *incomplete* episode that completes after a \(C\) mutation with no \(\theta\) change. Then \(I_{\mathrm{loop}}\) was identified on that incomplete trace; clause 2 licensed the wrong arm.
+- A *completed miss* that only moves after \(S\) changes (no \(C\) mutation suffices). Then the miss was not a \(C\)-attractor; clause 3 licensed the wrong arm.
+- An *incomplete* episode that completes after a \(C\) mutation with no \(S\) change. Then \(I_{\mathrm{loop}}\) was identified on that incomplete trace; clause 2 licensed the wrong arm.
+- Putting the model pointer back inside \(C\) so both arms write the same coordinate.
 - If hung-44 is still \(I_{\mathrm{loop}}\) unless `loopExhausted`, the split is dead (clause 2 was not implemented).
 - If a mount never rebinds serving to 0813, there was no jump (Lemma 7.7: later serving must use the new SKU).
 - Treating \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\) as a result of this paper (buying a stronger API; a diagnostic at most).
@@ -395,11 +402,11 @@ Lemma 7.9 is the typed rule in \((\mathrm{completion},\,\mathrm{attractors},\,\m
 Interface, not implementation in this repo.
 
 - Make (\mathrm{Obs}\) a first-class memory write: first-passage stats and channel tags on `traces`.
-- Treat (C\) as first-class: temperature, validator, commit, seed as node props (like `model` after PR #2).
-- `improveLoop` already *is* (P^{\mathrm{ctrl}}(\cdot\mid\mathrm{Obs})\): topology / capability / adapter, gated by eval. Name it that way.
-- Implement Lemma 7.9: hung / crash / no-write \(\to\) slow \(f_\theta\) actuator (\(I_{\mathrm{sku}}\) on this stack), not a default \(I_{\mathrm{loop}}\) and not “\(I_{\mathrm{loop}}\) until `loopExhausted`”. Wait-hit stays the identity on \(C\).
-- Available cell \(I_{\mathrm{sku}}\): `0731` \(\to\) `0813`. `servingPaused=false`. Gated mount rebinds `PhysicalNode.provider` / `n.model`. Later serving must use 0813 or there was no jump. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not title the runtime as a router.
-- Trainer-spawn stays unimplemented.
+- Split the runtime state: graph \(C\) (temperature, validator, commit, seed) is not the decoder pointer \(S\) (`PhysicalNode.provider` / `n.model`).
+- `improveLoop` writes \(C\) only. The slow arm gated-rebinds \(S\). They are not two names for one bag.
+- Implement Lemma 7.9: hung / crash / no-write \(\to I_{\mathrm{sku}}\), not a default \(I_{\mathrm{loop}}\) and not “\(I_{\mathrm{loop}}\) until `loopExhausted`”. License is incompleteness. Wait-hit stays the identity on \(C\) and \(S\).
+- Available cell \(I_{\mathrm{sku}}\): `0731` \(\to\) `0813`. A cell, not the title. `servingPaused=false`. Gate is eval / first-passage, not “0813 exists.” Later serving must use 0813 or there was no jump. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not title the runtime as a router.
+- Do not spawn a trainer. That sentence is not the claim. Catalog rebind is the implemented slow actuator.
 - Expose (\tau_S,\tau_F\) in `runBenchmark` (already has `score`).
 
 The typed kernel in `src/` is the contract these props should satisfy.
@@ -408,7 +415,7 @@ The typed kernel in `src/` is the contract these props should satisfy.
 
 ## §10 Diagnostics (existence and arm choice; not a leaderboard)
 
-The ICLR contribution is the framework + theory: \(\mathrm{Obs}\) types the failure and chooses \(C\) vs \(f_\theta\). \(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose a factor**. Do not claim SOTA on \(\tau^2\). Do not invent scores. Do not treat trainer-spawn as the implemented arm. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not treat mock \(0\to 0.5\to 1.0\) as a result. Do not title the paper as model routing.
+The ICLR contribution is the framework + theory: two licensed edits, typed \(\mathrm{Obs}\). \(I_{\mathrm{loop}}\) mutates graph \(C\). \(I_{\mathrm{sku}}\) gated-rebinds decoder pointer \(S\). Catalog rebind is the implemented slow actuator, not the title claim. \(\tau^2\) and the 0731 rollouts are **diagnostics that the loop ran and that \(\mathrm{Obs}\) chose a coordinate**. Do not claim SOTA on \(\tau^2\). Do not invent scores. Do not spawn a trainer as the claim. Do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Do not lead with \(0.7\to 0.9\). Do not treat mock \(0\to 0.5\to 1.0\) as a result. Do not title the paper as model routing. Do not put the model pointer back inside \(C\).
 
 **Held-out is the eval.** Airline tasks \(18,20,23,25,30,35,38,42,45,48\) (OpenRouter `deepseek/deepseek-v4-flash-0731`, user+judge same model, 1 trial, max 2 rounds, one policy-checklist \(I_{\mathrm{loop}}\) only). Official DB hash. Audit: no gold reservation ID and no gold action leaked into the live prompt. The checklist was not written for these IDs; method overfit on \(39/41/44\) is why held-out exists. `pHitSequence` \(0.7\to 0.9\). One-shot misses \(23,35,48\) (hits the other 7). Policy-checklist lifts those three and **regresses 18** (\(1\to 0\)). Completion: r0 finished 8 / transfer 2; r1 finished 9 / transfer 1; hung 0, error 0. JSON: `experiments/improve-live-0731-heldout.json` (source: vdom-harness `eval/tau2/improve-live-0731-heldout.json`). Better than this one-shot control on a \(10\times 1\) slice. Not a reliability claim. The loop is real; the content of \(C\) is a static prior, not self-reflection. Discovery slice = test-hacking risk. Held-out = weak generalization, including a regression on a task \(\mathrm{Obs}\) marked `wait`. Not SOTA, not a \(\tau^2\) win. See `paper/ANALYSIS.md` §0c.
 
@@ -424,7 +431,7 @@ Mock closed loop \(0\to 0.5\to 1.0\) on official `update_task_1` / `impossible_t
 
 Static retail \(5\times 4\) \(\mathrm{pass}^k=1\) (`experiments/tau2-retail-0731.json`) is \(\mathbb{P}_{C_0}\) at a \(\mathrm{wait}\) fixed point, not self-improvement.
 
-The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_C\): same \(f_\theta\), two temperatures, first-passage. They **license** \(I_{\mathrm{loop}}\) when the miss is a topology attractor (retrieval 12/12, sequential toys 0/12, \(\tau\)-invariant loops). They are **not** the agent benchmark. Counts: `paper/ANALYSIS.md`, `experiments/live-0731.json`.
+The three fixtures in `src/tasks.ts` (word-reverse, calculator, retrieval-QA) diagnose \(K_{C,S}\): same \(S\), two temperatures, first-passage. They **license** \(I_{\mathrm{loop}}\) when the miss is a topology attractor (retrieval 12/12, sequential toys 0/12, \(\tau\)-invariant loops). They are **not** the agent benchmark. Counts: `paper/ANALYSIS.md`, `experiments/live-0731.json`.
 
 The established *diagnostic* environment is [τ²-bench](https://github.com/sierra-research/tau2-bench) (Barres et al., 2025). \(\mathrm{pass}^k\) is first-passage under \(k\) i.i.d. repeats, not \(\mathrm{pass}@k\). Implementation: [vdom-harness](https://github.com/keejkrej/vdom-harness) `improveLoop` + `python -m tau2_vdom`. Do not invent a larger \(\tau^2\) table.
 
