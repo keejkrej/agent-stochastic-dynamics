@@ -119,15 +119,12 @@ export function observe(
   const repeatRate = consecutiveRepeatRate(lastActions);
   const run = maxRun(lastActions);
   const firstAction = lastActions[0] ?? "";
-  const allSame = lastActions.length >= 2 && new Set(lastActions).size === 1;
   const zeroProgress =
     traces.length >= 2 && traces.every((t) => t.observation.text === traces[0]!.observation.text);
   const timeoutLike = traces.length >= 6 && pHitHat < 1;
-  const wrLoop = allSame && firstAction === "reverse_entire";
+  const wrLoop = firstAction === "reverse_entire";
   const calcStuck =
-    firstAction === "tool:add:3,5" &&
-    !lastActions.includes("tool:mul:8,2") &&
-    lastActions.length >= 2;
+    firstAction === "tool:add:3,5" && !lastActions.includes("tool:mul:8,2");
   const metastableLoop = wrLoop || calcStuck || (repeatRate === 1 && timeoutLike && zeroProgress);
   const knowledgeMiss = pHitHat < 1 && looksLikeKnowledgeMiss(traces, lastActions);
 
