@@ -1,39 +1,39 @@
 /**
- * Self-observation and dual intervention.
+ * Self-observation and dual intervention. Author lock: I_loop | I_sku.
  *
  *   Obs: traces -> features in M
- *   P^ctrl(· | Obs) in {graph_mutation, catalog_rebind, mount_adapter, rollback, wait}
- *   spawn_trainer is reserved / unimplemented (original I_weight: trainer → θ').
+ *   P^ctrl(· | Obs) in {graph_mutation, I_sku, mount_sku, rollback, wait}
+ *   spawn_trainer is related work / unimplemented future, not the claim.
  *
- * Closed loop on the fast clock:
- *   C_{n+1} ~ P^ctrl(· | C_n, Obs(traces_n))
- * After I_loop or a gated catalog mount, Obs reads the *new* traces and may fire again.
- * Implemented slow arm: catalog_rebind — request a different servable model id;
- * serving continues on the old f_θ (servingPaused=false); mount rebinds
- * PhysicalNode.provider / n.model. Concrete pair: 0731 → 0813.
- * Not fine-tuning. Not a LoRA. Not self-improvement via a stronger API.
- * Jump only on gated mount; later serving must use the new provider or there was no jump.
- * Do not report p_hit(0813) vs p_hit(0731).
+ * Serve the cheapest capable SKU. After Obs:
+ *   I_loop mutates C, same SKU, fast clock, servingPaused=false.
+ *   I_sku requests a more expensive released checkpoint; serving continues
+ *   on the cheap SKU; gated mount rebinds PhysicalNode.provider / n.model.
+ * Concrete cell: flash-0731 → pro-0813.
+ * Jump only on gated mount; later serving must use the new SKU or there was no jump.
+ * Do not report p_hit(0813) − p_hit(0731) as a result.
  *
- * Typed rule: paper/FRAMEWORK.md Lemma 7.9 / paper/NOTES_ARM_CHOICE.md
+ * Typed rule: paper/FRAMEWORK.md Lemma 7.9
  *   hit → wait
- *   incomplete (hung / crash / no-write) → catalog_rebind
+ *   incomplete (hung / crash / no-write) → I_sku
  *   completed-miss ∧ attractor → I_loop
- * Extra H is not an arm. Hung must not default to I_loop unless loopExhausted.
+ * Extra H is not an arm.
  */
 import type { Control, StepTrace } from "./types.js";
 
 export type Intervention =
   | "graph_mutation"
+  | "I_sku"
   | "catalog_rebind"
   | "spawn_trainer"
+  | "mount_sku"
   | "mount_adapter"
   | "rollback"
   | "capability_mount"
   | "commit"
   | "wait";
 
-export type ObsArm = "wait" | "I_loop" | "catalog_rebind" | "I_weight" | "inspect";
+export type ObsArm = "wait" | "I_loop" | "I_sku" | "inspect";
 
 /** Lemma 7.9 completion. Hung is never a hit. */
 export type Completion = "hit" | "completed-miss" | "incomplete";
@@ -53,16 +53,16 @@ export type ObsDecisionIn = {
   pHatHit: number;
 };
 
-export type LicensedArm = "wait" | "I_loop" | "catalog_rebind";
+export type LicensedArm = "wait" | "I_loop" | "I_sku";
 
-/** Implemented slow arm: gated catalog rebind. Not original I_weight (trainer → θ'). */
-export const CATALOG_REBIND = {
+/** Concrete I_sku cell: cheapest capable base, escalate to a released Pro checkpoint. */
+export const SKU_CELL = {
   from: "deepseek/deepseek-v4-flash-0731",
   to: "deepseek/deepseek-v4-pro-0813",
 } as const;
 
-/** @deprecated Use CATALOG_REBIND. Alias kept so older tests / notes still compile. */
-export const CATALOG_IWEIGHT = CATALOG_REBIND;
+export const CATALOG_REBIND = SKU_CELL;
+export const CATALOG_IWEIGHT = SKU_CELL;
 
 export type ObsFeatures = {
   nSteps: number;
@@ -117,11 +117,11 @@ function looksLikeKnowledgeMiss(traces: StepTrace[], actions: string[]): boolean
  */
 export function decideArm(input: ObsDecisionIn): LicensedArm {
   if (input.waitHit || (input.completion === "hit" && input.pHatHit >= 1)) return "wait";
-  if (input.completion === "incomplete") return "catalog_rebind";
+  if (input.completion === "incomplete") return "I_sku";
   const attractor =
     input.attractors.inventedPolicy || input.attractors.extraWrite || input.attractors.toolThrash;
   if (input.completion === "completed-miss" && attractor) return "I_loop";
-  return "catalog_rebind";
+  return "I_sku";
 }
 
 export function observe(
@@ -157,15 +157,14 @@ export function observe(
   let arm: ObsArm = typed;
   if (typed === "wait") {
     critique = "path measure hits S; wait";
-  } else if (typed === "catalog_rebind" && completion === "incomplete") {
+  } else if (typed === "I_sku" && completion === "incomplete") {
     critique =
-      "incomplete episode; catalog rebind 0731→0813; servingPaused=false; I_loop on empty traces unidentified; not trainer / not SGD";
+      "incomplete episode; I_sku escalate 0731→0813; servingPaused=false; I_loop on empty traces unidentified";
   } else if (typed === "I_loop") {
     critique = "metastable loop; I_loop: forbid last failed action / Self-Refine; loop mutation";
-  } else if (knowledgeMiss || typed === "catalog_rebind") {
-    critique =
-      "knowledge miss or unidentified C-failure; catalog rebind 0731→0813; not fine-tuning";
-    arm = "catalog_rebind";
+  } else if (knowledgeMiss || typed === "I_sku") {
+    critique = "knowledge miss or unidentified C-failure; I_sku escalate 0731→0813";
+    arm = "I_sku";
   } else if (lastActions.includes("reverse_entire") || lastActions.includes("answer:10")) {
     critique = "fixture miss; I_loop graph mutation (same f_θ)";
     arm = "I_loop";
@@ -191,41 +190,35 @@ export function observe(
 
 export function chooseIntervention(obs: ObsFeatures, job?: TrainerJob): Intervention {
   if (obs.nSuccessProxy >= 1 || obs.arm === "wait" || obs.waitHit) return "wait";
-  if (job?.status === "ready" && job.resultModelId) return "mount_adapter";
+  if (job?.status === "ready" && job.resultModelId) return "mount_sku";
   if (job?.status === "failed") return "rollback";
   if (job?.status === "running") return "wait";
-  if (
-    obs.completion === "incomplete" ||
-    obs.arm === "catalog_rebind" ||
-    obs.arm === "I_weight"
-  ) {
-    return "catalog_rebind";
-  }
+  if (obs.completion === "incomplete" || obs.arm === "I_sku") return "I_sku";
   if (obs.arm === "I_loop" || obs.critique.includes("loop mutation")) return "graph_mutation";
-  return "catalog_rebind";
+  return "I_sku";
 }
 
-/** Slow clock: catalog request does not change f_θ. Gated mount rebinds the provider. */
+/** Slow clock: I_sku request does not change the bound SKU. Gated mount rebinds. */
 export function applyIntervention(
   C: Control,
   action: Intervention,
   job?: TrainerJob,
 ): { C: Control; job?: TrainerJob } {
-  if (action === "catalog_rebind") {
+  if (action === "I_sku" || action === "catalog_rebind") {
     return {
       C,
       job: job ?? {
-        id: "catalog-1",
+        id: "sku-1",
         status: "running",
-        resultModelId: CATALOG_REBIND.to,
+        resultModelId: SKU_CELL.to,
       },
     };
   }
   if (action === "spawn_trainer") {
-    // Reserved original I_weight. Unimplemented. Does not write θ.
+    // Related work / unimplemented future. Not the claim. Does not write θ.
     return { C, job: job ?? { id: "job-1", status: "running" } };
   }
-  if (action === "mount_adapter" && job?.resultModelId) {
+  if ((action === "mount_sku" || action === "mount_adapter") && job?.resultModelId) {
     return {
       C: { ...C, modelId: job.resultModelId, adapterId: job.artifactId },
       job: { ...job, status: "ready" },

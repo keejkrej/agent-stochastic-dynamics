@@ -22,8 +22,8 @@ No number below is invented.
 **Arm choice.** Typed rule: `paper/FRAMEWORK.md` Lemma 7.9 and `paper/NOTES_ARM_CHOICE.md`. From $\mathrm{Obs}$:
 
 - `wait` on wait-hit (identity on $C$);
-- $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph (composition of $K$);
-- catalog rebind on an *incomplete* episode (hung / crash / no-write), or a completed miss with no identified $C$-attractor — request a different servable model id ($0731\to 0813$); serving keeps $f_\theta$ (`servingPaused=false`); gated mount rebinds `PhysicalNode.provider` / `n.model`. Jump iff later serving uses the new provider. Not fine-tuning. Not a LoRA. Not original $I_{\mathrm{weight}}$ (trainer $\to\theta'$; reserved, unimplemented). Do not report $p_{\mathrm{hit}}(0813)$ vs $p_{\mathrm{hit}}(0731)$. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
+- $I_{\mathrm{loop}}$ on a *completed* miss with a topology / policy attractor — mutate the AgentGraph, same SKU;
+- $I_{\mathrm{sku}}$ on an *incomplete* episode (hang / crash / no-write) — request a more expensive released checkpoint ($0731\to 0813$); serving keeps the cheap SKU (`servingPaused=false`); gated mount rebinds `PhysicalNode.provider` / `n.model`. Jump iff later serving uses the new SKU. Not a Pro-vs-Flash result. Hung must not default to $I_{\mathrm{loop}}$ unless `loopExhausted`.
 
 Then it observes again. That iteration is the process the framework names. Negative traces (self-obs $0.5\to 0.0$; post-gate hang on 44) are evidence for the rule, not scores to lead.
 

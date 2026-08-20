@@ -19,7 +19,7 @@
   "iWeight": null,
   "iWeightLicensed": true,
   "iWeightTaken": false,
-  "iWeightNote": "Hang on 44 licenses catalog rebind (Lemma 7.9 clause 2): request 0731->0813. servingPaused=false. Gated mount rebinds PhysicalNode.provider / n.model. Jump iff later serving uses 0813. Original I_weight (trainer->theta') is reserved and unimplemented. Not SGD. Not fine-tuning. Not a LoRA. Not self-improvement via a stronger API. Do not report p_hit(0813) vs p_hit(0731). Runtime still tagged I_loop+hung unless loopExhausted — type error; that falsifies the split if left in place. iWeight null: licensed, not taken. No jump.",
+  "iWeightNote": "Hang on 44 licenses I_sku (Lemma 7.9): request 0731->0813. servingPaused=false. Gated mount rebinds PhysicalNode.provider / n.model. Jump iff later serving uses 0813. Trainer-spawn is not the claim. Do not report p_hit(0813)-p_hit(0731). Runtime still tagged I_loop+hung unless loopExhausted — split is dead if left. iWeight null: licensed, not taken. No jump.",
   "pHitSequence": [0.0, 0.0],
   "pHitNote": "Do not lead with 0→0. Round 0 p_hit is on completed tasks only (39 miss). Task 44 hung/timeout (taskPHit null, skipped 44:t0:timeout, reward null, nmsg 0) is not a measured 0. Round 1: both completed; p_hit stayed 0. Completion moved on 44 (hung → finished miss). Evidence for the typed rule, not a score.",
   "passHatK": {
@@ -99,7 +99,7 @@
     "serving mid-turn get_agent_graph / set_agent_graph was never called (zero calls)",
     "I_weight was licensed by the hang but not taken (max-rounds 1; iWeight null); no mount rebound serving to 0813, so there was no jump",
     "no post-I_weight live numbers; do not invent any",
-    "original I_weight (trainer->theta') is reserved and unimplemented; implemented slow arm is catalog rebind, not a LoRA",
+    "trainer-spawn is related work, not the claim; licensed arm is I_sku, not taken on this run",
     "runtime hung still defaults to I_loop unless loopExhausted (Lemma 7.9 type error; split is dead if left)"
   ],
   "honestNote": "Evidence for Lemma 7.9, not a SOTA miss. Mixed batch with a hang: applyScope looped both (no wait-hit); gate behaved. Self I_loop still a cancel attractor. Completion moved on 44 (hung → finished miss). The hang licenses I_weight, not another critic. Do not lead with 0→0.",

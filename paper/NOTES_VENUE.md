@@ -10,8 +10,8 @@ The paper establishes a **runtime self-improvement framework with theoretical su
 
 - An LLM agent is a controlled hybrid Markov process. State \(X=(H,M,E,C)\). Kernel \(K_C\). Three typed noise channels (samp, num, env).
 - \(\mathrm{Obs}\) maps traces + first-passage proxies + completion (hung / transfer / crash) into \(M\).
-- Fast arm: \(I_{\mathrm{loop}}\) (mutate AgentGraph / \(C\); serving does not pause). Implemented slow arm: gated catalog rebind (0731 \(\to\) 0813; `servingPaused=false`; mount rebinds `PhysicalNode.provider` / `n.model`). Reserved and unimplemented: \(I_{\mathrm{weight}}\) as originally defined (trainer \(\to\) gated \(\theta'\)). Not fine-tuning. Not a LoRA. Not self-improvement via a stronger API. Do not report \(p_{\mathrm{hit}}(0813)\) vs \(p_{\mathrm{hit}}(0731)\).
-- Arm choice: typed rule in `paper/FRAMEWORK.md` Lemma 7.9. Hit \(\to\) wait. Incomplete (hung / crash / no-write) \(\to\) catalog rebind. Completed miss + attractor \(\to I_{\mathrm{loop}}\). Extra \(H\) is not an arm. See `paper/NOTES_ARM_CHOICE.md`.
+- Dual intervention: \(I_{\mathrm{loop}}\) | \(I_{\mathrm{sku}}\). Serve cheapest capable SKU; escalate after \(\mathrm{Obs}\). Trainer-spawn is related work, not the claim.
+- Arm choice: `paper/FRAMEWORK.md` Lemma 7.9. Hit \(\to\) wait. Incomplete \(\to I_{\mathrm{sku}}\). Completed miss + attractor \(\to I_{\mathrm{loop}}\). Extra \(H\) is not an arm.
 
 **Experiments are existence and arm-choice diagnostics**, not a \(\tau^2\) SOTA attempt and not “we improve \(\tau^2\) airline.”
 

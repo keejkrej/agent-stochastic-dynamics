@@ -7,7 +7,7 @@ import { CALCULATOR, WORD_REVERSE } from "../tasks.js";
 import { createProvider, openRouterKey } from "../openrouter.js";
 import { defaultControl } from "../types.js";
 import { rollout } from "../experiments.js";
-import { applyIntervention, CATALOG_IWEIGHT, chooseIntervention, decideArm, observe } from "../observe.js";
+import { applyIntervention, SKU_CELL, chooseIntervention, decideArm, observe } from "../observe.js";
 import type { TrainerJob } from "../observe.js";
 
 test("greedy collapse: τ=0, unique argmax, Dirac env/mem/ctrl ⇒ automaton", () => {
@@ -127,12 +127,12 @@ test("Obs writes a critique; spawn does not jump f_theta; mount does", () => {
   assert.equal(spawned.job?.status, "running");
 
   const ready = { id: "job-1", status: "ready" as const, artifactId: "a1", resultModelId: "adapted:a1" };
-  const mounted = applyIntervention(C0, "mount_adapter", ready);
+  const mounted = applyIntervention(C0, "mount_sku", ready);
   assert.equal(mounted.C.modelId, "adapted:a1");
   assert.equal(mounted.C.adapterId, "a1");
 });
 
-test("Lemma 7.9: typed Obs arm is wait | I_loop | catalog_rebind", () => {
+test("Lemma 7.9: typed Obs arm is wait | I_loop | I_sku", () => {
   const none = { inventedPolicy: false, extraWrite: false, toolThrash: false };
   const thrash = { inventedPolicy: false, extraWrite: false, toolThrash: true };
   const invented = { inventedPolicy: true, extraWrite: false, toolThrash: false };
@@ -154,25 +154,25 @@ test("Lemma 7.9: typed Obs arm is wait | I_loop | catalog_rebind", () => {
   );
   assert.equal(
     decideArm({ completion: "completed-miss", attractors: none, waitHit: false, pHatHit: 0 }),
-    "catalog_rebind",
+    "I_sku",
   );
   assert.equal(
     decideArm({ completion: "incomplete", attractors: thrash, waitHit: false, pHatHit: 0 }),
-    "catalog_rebind",
+    "I_sku",
   );
   assert.equal(
     decideArm({ completion: "incomplete", attractors: none, waitHit: false, pHatHit: 0 }),
-    "catalog_rebind",
+    "I_sku",
   );
 
   const hung = observe([], 0, { completion: "incomplete" });
-  assert.equal(hung.arm, "catalog_rebind");
-  assert.equal(chooseIntervention(hung), "catalog_rebind");
+  assert.equal(hung.arm, "I_sku");
+  assert.equal(chooseIntervention(hung), "I_sku");
   assert.ok(hung.critique.includes("incomplete"));
   assert.ok(hung.critique.includes("0813"));
-  assert.ok(hung.critique.includes("catalog rebind"));
-  assert.equal(CATALOG_IWEIGHT.from, "deepseek/deepseek-v4-flash-0731");
-  assert.equal(CATALOG_IWEIGHT.to, "deepseek/deepseek-v4-pro-0813");
+  assert.ok(hung.critique.includes("I_sku"));
+  assert.equal(SKU_CELL.from, "deepseek/deepseek-v4-flash-0731");
+  assert.equal(SKU_CELL.to, "deepseek/deepseek-v4-pro-0813");
 });
 
 test("live flags parse N, temps, cascade; rate-limit detector; no-key rollout", async () => {
