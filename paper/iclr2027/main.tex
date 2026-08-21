@@ -10,7 +10,7 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{definition}{Definition}
 
-\title{Runtime Self-Improvement of {LLM} Agents as a Controlled Hybrid Markov Process}
+\title{Which Factor of {$K$} to Touch: Typed Observation and Two Licensed Config Actuators}
 
 \author{Tianyi Cao \\
 Independent \thanks{Affiliation TODO.} \\
@@ -190,15 +190,16 @@ Implementation: \url{https://github.com/keejkrej/vdom-harness}. \texttt{improveL
 
 Only the two licensed edits and the two clocks are claimed. A request writes neither \(C\) nor \(S\) (Lemma~\ref{lem:spawn}). The fast process keeps \(K_{C,S}\). The available cell on this stack is a released checkpoint id (\texttt{deepseek/deepseek-v4-flash-0731} \(\to\) \texttt{deepseek/deepseek-v4-pro-0813}; OpenRouter, GA 2026-08-12). A gate reads fixture \(\hat p_{\mathrm{hit}}\) (or \(\mathrm{pass}^k\)), not ``0813 exists''; mount rebinds \(S\); reject and rollback are the identity and the inverse. \(S\) jumped iff later serving uses \(S'\). If a mount never rebinds serving to 0813, there was no jump. See \S9 of \texttt{paper/FRAMEWORK.md}. Live airline \texttt{improveLoop} still omits after. We do not invent a measured 0813 \(p_{\mathrm{hit}}\). We do not sell \(p_{\mathrm{hit}}(0813)-p_{\mathrm{hit}}(0731)\). Not a Pro-vs-Flash lift. Not a trainer. Trainer \(I_{\mathrm{weight}}\) remains unimplemented. \(I_{\mathrm{sku}}\) remains the stand-in cell.
 
-\subsection{Held-out airline is the eval: \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved}
+\subsection{Held-out airline is a diagnostic: \(\mathrm{Obs}\) chose \(I_{\mathrm{loop}}\) and \(C\) moved}
 \label{sec:airloop}
 
-This subsection is the eval. The policy-checklist was not written for these task IDs. Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, official airline tasks \(18,20,23,25,30,35,38,42,45,48\), one trial, max two rounds, user simulator and NL-assertion judge pinned to the same model. One \(I_{\mathrm{loop}}\) only: a policy-checklist mount. Official \(\tau^2\) DB hash. Serving did not pause. Audit: no gold reservation ID and no gold action leaked into the live prompt. A policy node encodes rules, never task-specific identifiers. Method overfit on \(39/41/44\) is why this slice exists. Not invented. Not SOTA. Not reliability. Not a \(\tau^2\) win.
+This subsection is a diagnostic table, not an eval. The policy-checklist was not written for these task IDs. Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, official airline tasks \(18,20,23,25,30,35,38,42,45,48\), one trial, max two rounds, user simulator and NL-assertion judge pinned to the same model. One \(I_{\mathrm{loop}}\) only: a policy-checklist mount. Official \(\tau^2\) DB hash. Serving did not pause. Audit: no gold reservation ID and no gold action leaked into the live prompt. A policy node encodes rules, never task-specific identifiers. Method overfit on \(39/41/44\) is why this slice exists. Not invented. Not SOTA. Not reliability. Not a \(\tau^2\) win.
 
 JSON: \texttt{experiments/improve-live-0731-heldout.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-heldout.json}). \(\mathrm{stopReason}\): \texttt{loop-exhausted}.
 
 \begin{center}
 \small
+\textit{Diagnostic table, not a result.}\\[0.4em]
 \begin{tabular}{clll}
 \toprule
 Cycle \(t\) & \(\mathrm{Obs}\) / completion & \(P^{\mathrm{ctrl}}\) & \(p_{\mathrm{hit}}\) \\
@@ -226,7 +227,7 @@ The only control we ran is the same 0731 one-shot graph on the same ten held-out
 \subsection{Replication on the overfit slice is secondary}
 \label{sec:airrep}
 
-Official airline \(39/41/44\), three trials, same model, official DB hash. The method was written against this slice; the numbers below are a replication, not the eval. JSON: \texttt{experiments/improve-live-0731-replication.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-replication.json}).
+Official airline \(39/41/44\), three trials, same model, official DB hash. The method was written against this slice; the numbers below are a replication, not a result. JSON: \texttt{experiments/improve-live-0731-replication.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-replication.json}).
 
 \begin{center}
 \small
@@ -242,12 +243,12 @@ policy-checklist \(I_{\mathrm{loop}}\) & \(0.556\) & \(0.444\) & \(0.333\) \\
 
 \(\mathrm{pass}^3\) is flat. Per-task trials: \(39\) goes \(0/3\to 2/3\); \(44\) stays \(0/3\to 0/3\); \(41\) stays \(3/3\to 3/3\). The earlier \(0.333\to 0.667\) was \(n=1\) on this same slice (\texttt{experiments/improve-live-0731-policy-v2.json}). Do not lead with \(0.667\).
 
-Older traces that licensed the typed arm, still on this slice: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) (\texttt{experiments/improve-live-0731.json}); first policy draft \(0.333\to 0\). Generic Self-Refine / validator did not leave the miss. That is licensing history, not the eval.
+Older traces that licensed the typed arm, still on this slice: generic \(I_{\mathrm{loop}}\) \(0.333\to 0\to 0.333\) (\texttt{experiments/improve-live-0731.json}); first policy draft \(0.333\to 0\). Generic Self-Refine / validator did not leave the miss. That is licensing history, not a result.
 
 \subsection{Self-obs \(I_{\mathrm{loop}}\) on \(39+44\): the loop ran; unscoped apply is illegal}
 \label{sec:selfobs}
 
-This subsection is another diagnostic, not the eval, and not a failed SOTA attempt. Do not lead with \(0.5\to 0.0\). Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, 2026-08-19, official airline \(39+44\), one trial, max one improve round. Slow-clock \texttt{selfObsPath}=\texttt{self}. Serving did not pause. Mid-turn \texttt{get\_agent\_graph} / \texttt{set\_agent\_graph}: zero calls. Both episodes completed with writes: not \(I_{\mathrm{sku}}\). JSON: \texttt{experiments/improve-live-0731-self-3944.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-self-3944.json}).
+This subsection is another diagnostic, not a result, and not a failed SOTA attempt. Do not lead with \(0.5\to 0.0\). Live OpenRouter \texttt{deepseek/deepseek-v4-flash-0731}, 2026-08-19, official airline \(39+44\), one trial, max one improve round. Slow-clock \texttt{selfObsPath}=\texttt{self}. Serving did not pause. Mid-turn \texttt{get\_agent\_graph} / \texttt{set\_agent\_graph}: zero calls. Both episodes completed with writes: not \(I_{\mathrm{sku}}\). JSON: \texttt{experiments/improve-live-0731-self-3944.json} (source: vdom-harness \texttt{eval/tau2/improve-live-0731-self-3944.json}).
 
 \begin{center}
 \small
@@ -305,7 +306,7 @@ retrieval-QA & \(0.7\) & \(12\) & \(12/12\) & \(1\) \\
 \end{tabular}
 \end{center}
 
-Word-reverse and calculator sit in temperature-invariant action attractors (consecutive-repeat rate \(60/60=1\)). Calculator's first tool is already correct (\(24/24\)); \(M\) contains the write of \(8\); generation does not consume it. Retrieval hits (\(12/12\), \(\tau_S=1\)). \(\tau=0\) already fails; \(\tau=0.7\) does not change \(p_{\mathrm{hit}}\) on the failures. Numerical tags: \(0/312\). By greedy collapse, residual randomness is a loop in the policy. A one-bit memory coupling sometimes leaves the attractor; temperature never does. Therefore \(\mathrm{Obs}\) licenses \(I_{\mathrm{loop}}\) on these fixtures. On the held-out airline eval in \S\ref{sec:airloop}, one typed policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. That is arm choice, not a \(\tau^2\) win. Remaining transfers license \(I_{\mathrm{sku}}\).
+Word-reverse and calculator sit in temperature-invariant action attractors (consecutive-repeat rate \(60/60=1\)). Calculator's first tool is already correct (\(24/24\)); \(M\) contains the write of \(8\); generation does not consume it. Retrieval hits (\(12/12\), \(\tau_S=1\)). \(\tau=0\) already fails; \(\tau=0.7\) does not change \(p_{\mathrm{hit}}\) on the failures. Numerical tags: \(0/312\). By greedy collapse, residual randomness is a loop in the policy. A one-bit memory coupling sometimes leaves the attractor; temperature never does. Therefore \(\mathrm{Obs}\) licenses \(I_{\mathrm{loop}}\) on these fixtures. On the held-out airline diagnostic in \S\ref{sec:airloop}, one typed policy-checklist \(I_{\mathrm{loop}}\) moved \(C\) (\(0.7\to 0.9\) at \(k=1\)), including a regression. That is arm choice, not a \(\tau^2\) win. Remaining transfers license \(I_{\mathrm{sku}}\).
 
 \section{Discussion}
 
